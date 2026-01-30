@@ -2,82 +2,58 @@
     "main_menu": {
         "name": "Главное меню",
         "children": {
-            "rock": { "name": "🎸 Rock & Metal", "action": "navigate", "value": "rock_menu" },
-            "hiphop": { "name": "🎤 Hip-Hop & Rap", "action": "navigate", "value": "hiphop_menu" },
-            "edm": { "name": "🎧 Electronic", "action": "navigate", "value": "edm_menu" },
-            "pop": { "name": "✨ Pop & R&B", "action": "navigate", "value": "pop_menu" },
-            "jazz": { "name": "🎷 Jazz & Soul", "action": "navigate", "value": "jazz_menu" },
-            "ru": { "name": "🇷🇺 Russian", "action": "navigate", "value": "ru_music" },
-            "moods": { "name": "🎯 Moods", "action": "navigate", "value": "moods" },
-            "random": { "name": "🎲 Shuffle All", "action": "random_radio" }
+            "rock": { "name": "🎸 Rock & Metal", "action": "navigate", "value": "rock" },
+            "hiphop": { "name": "🎤 Hip-Hop & Rap", "action": "navigate", "value": "hiphop" },
+            "edm": { "name": "🎧 Electronic", "action": "navigate", "value": "edm" },
+            "pop": { "name": "✨ Pop & R&B", "action": "navigate", "value": "pop" },
+            "jazz": { "name": "🎷 Jazz & Soul", "action": "navigate", "value": "jazz" }
         }
     },
-    "rock_menu": {
+    "rock": {
         "name": "🎸 Rock & Metal",
         "children": {
-            "r_60s": { "name": "60s/70s Classic", "query": "classic rock 70s led zeppelin" },
-            "r_80s": { "name": "80s Glam & Wave", "query": "80s rock hits glam metal" },
-            "r_90s": { "name": "90s Grunge/Punk", "query": "90s rock grunge britpop" },
-            "r_00s": { "name": "00s Nu-Metal/Indie", "query": "2000s rock hits linkin park" },
-            "r_mod": { "name": "Modern Rock", "query": "modern rock shoegaze post-hardcore" }
+            "r1": { "name": "60s/70s (Psych/Hard)", "query": "classic rock 70s psychedelic hard rock" },
+            "r2": { "name": "80s (Glam/New Wave)", "query": "80s glam metal new wave post punk" },
+            "r3": { "name": "90s (Grunge/Britpop)", "query": "90s grunge britpop skate punk" },
+            "r4": { "name": "00s (Nu-Metal/Indie)", "query": "2000s pop punk indie rock nu metal" },
+            "r5": { "name": "Modern (Shoegaze)", "query": "modern rock shoegaze post hardcore" }
         }
     },
-    "hiphop_menu": {
+    "hiphop": {
         "name": "🎤 Hip-Hop & Rap",
         "children": {
-            "h_old": { "name": "80s Old School", "query": "old school hip hop 80s" },
-            "h_90s": { "name": "90s Gangsta/G-Funk", "query": "90s hip hop boom bap g-funk" },
-            "h_00s": { "name": "00s Dirty South", "query": "2000s hip hop hits 50 cent" },
-            "h_10s": { "name": "10s Cloud/Trap", "query": "soundcloud rap hits juice wrld" },
-            "h_new": { "name": "Modern Drill/Rage", "query": "drill rap playboi carti yeat" }
+            "h1": { "name": "80s Old School", "query": "80s old school hip hop electro rap" },
+            "h2": { "name": "90s G-Funk/Boom Bap", "query": "90s boom bap g funk gangsta rap" },
+            "h3": { "name": "00s Crunk/South", "query": "2000s crunk dirty south hip hop" },
+            "h4": { "name": "10s SoundCloud", "query": "soundcloud rap mumble rap emo trap" },
+            "h5": { "name": "Modern Drill/Rage", "query": "modern drill rap rage dark trap" }
         }
     },
-    "edm_menu": {
+    "edm": {
         "name": "🎧 Electronic",
         "children": {
-            "e_ret": { "name": "70s/80s Disco/Synth", "query": "disco hits 80s synthwave" },
-            "e_90s": { "name": "90s Eurodance/Trance", "query": "90s eurodance classic trance" },
-            "e_00s": { "name": "00s House/Dubstep", "query": "electro house 2000s dubstep" },
-            "e_10s": { "name": "10s Trap/Future", "query": "edm trap future bass hits" },
-            "e_mod": { "name": "Phonk & Hyperpop", "query": "drift phonk hyperpop 100 gecs" }
+            "e1": { "name": "70s/80s Disco", "query": "70s disco 80s synth pop italo disco" },
+            "e2": { "name": "90s Eurodance/Trance", "query": "90s eurodance jungle idm trance" },
+            "e3": { "name": "00s House/Dubstep", "query": "electro house early dubstep minimal techno" },
+            "e4": { "name": "10s Trap/Future", "query": "future bass edm trap tropical house" },
+            "e5": { "name": "Modern Phonk/Hyperpop", "query": "drift phonk hardstyle hyperpop" }
         }
     },
-    "pop_menu": {
+    "pop": {
         "name": "✨ Pop & R&B",
         "children": {
-            "p_80s": { "name": "80s Icons", "query": "80s pop hits michael jackson" },
-            "p_90s": { "name": "90s Boybands/R&B", "query": "90s pop hits backstreet boys" },
-            "p_00s": { "name": "00s Hits", "query": "2000s pop hits britney spears" },
-            "p_mod": { "name": "Modern & K-Pop", "query": "top pop hits 2024 kpop" }
+            "p1": { "name": "80s Synth/Dance", "query": "80s synth rnb dance pop" },
+            "p2": { "name": "90s R&B/Boybands", "query": "90s contemporary rnb boy bands" },
+            "p3": { "name": "00s Teen Pop", "query": "2000s teen pop hip hop soul" },
+            "p4": { "name": "Modern / K-Pop", "query": "modern alt pop kpop bedroom pop" }
         }
     },
-    "jazz_menu": {
+    "jazz": {
         "name": "🎷 Jazz & Soul",
         "children": {
-            "j_cls": { "name": "Classic Jazz (Bebop)", "query": "classic jazz bebop miles davis" },
-            "j_sou": { "name": "Soul & Motown", "query": "motown soul hits 70s" },
-            "j_fun": { "name": "Funk", "query": "classic funk music james brown" },
-            "j_mod": { "name": "Acid / Nu-Jazz", "query": "acid jazz mix" }
-        }
-    },
-    "ru_music": {
-        "name": "🇷🇺 Русская музыка",
-        "children": {
-            "ru_sov": { "name": "🎙 Ретро / СССР", "query": "лучшие песни ссср 70-80" },
-            "ru_rck": { "name": "🎸 Русский Рок", "query": "русский рок хиты кино би-2" },
-            "ru_pop": { "name": "💃 Попса 90-00х", "query": "русская дискотека 90 руки вверх" },
-            "ru_rap": { "name": "🎤 Рэп", "query": "русский рэп новинки" },
-            "ru_chn": { "name": "🚬 Шансон", "query": "золотой шансон михаил круг" }
-        }
-    },
-    "moods": {
-        "name": "🎯 Moods",
-        "children": {
-            "m_wrk": { "name": "👨‍💻 Work / Focus", "query": "deep focus music for work" },
-            "m_gym": { "name": "💪 Gym / Phonk", "query": "workout motivation phonk" },
-            "m_rel": { "name": "😌 Relax / Lofi", "query": "chill lofi beats" },
-            "m_prt": { "name": "🎉 Party", "query": "party dance hits 2024" },
-            "m_drv": { "name": "🚗 Night Drive", "query": "night drive music" }
+            "j1": { "name": "Soul/Funk 60s/70s", "query": "motown sound deep funk 70s" },
+            "j2": { "name": "Jazz 40s/50s (Bebop)", "query": "bebop jazz cool jazz classics" },
+            "j3": { "name": "Modern Jazz", "query": "nu jazz acid jazz mix" }
         }
     }
 }
