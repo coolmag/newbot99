@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     SPOTIFY_CLIENT_SECRET: Optional[str] = None
 
     # ВАЖНО: Алиас для ADMIN_IDS
-    ADMIN_ID_LIST: List[int] = Field(default=[], validation_alias="ADMIN_IDS")
+    ADMIN_ID_LIST: Any = Field(default=[], validation_alias="ADMIN_IDS")
     
     # Пути
     BASE_DIR: Path = Path(__file__).resolve().parent
