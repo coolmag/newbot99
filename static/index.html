@@ -3,89 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aurora Retro Deck</title>
+    <title>Aurora Player</title>
     <style>
-        :root{--bg:#121212;--case:#1a1a1a;--sticker:#d0d0d0;--tape:#2b2b2b;--cyan:#00f3ff;--pink:#ff0055;--gold:#ffcc00;--glass:rgba(255,255,255,0.05)}
-        body{background-color:var(--bg);color:#eee;font-family:'Courier New',monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;overflow:hidden;user-select:none;touch-action:manipulation}
+        :root { --bg: #121212; --deck: #1e1e1e; --accent: #00f0ff; --text: #eee; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; user-select: none; }
         
-        /* CASSETTE DECK */
-        .cassette{width:340px;height:210px;background:var(--case);border-radius:16px;position:relative;box-shadow:inset 0 0 40px #000, 0 20px 60px rgba(0,0,0,0.8), 0 0 0 2px #333;display:flex;flex-direction:column;align-items:center;padding:15px;z-index:10}
-        .screw{position:absolute;width:12px;height:12px;background:#333;border-radius:50%;box-shadow:inset 1px 1px 2px #000;display:flex;align-items:center;justify-content:center}.screw::after{content:'+';color:#111;font-size:14px;font-weight:bold;transform:rotate(45deg)}
-        .tl{top:10px;left:10px}.tr{top:10px;right:10px}.bl{bottom:10px;left:10px}.br{bottom:10px;right:10px}
+        /* DECK */
+        .deck-container { margin-top: 20px; position: relative; width: 340px; height: 220px; background: var(--deck); border-radius: 12px; box-shadow: inset 0 0 20px #000, 0 10px 30px rgba(0,0,0,0.5); border: 2px solid #333; display: flex; flex-direction: column; align-items: center; padding: 15px; }
+        .screw { position: absolute; width: 10px; height: 10px; background: #444; border-radius: 50%; box-shadow: inset 1px 1px 2px #000; }
+        .tl { top: 8px; left: 8px; } .tr { top: 8px; right: 8px; } .bl { bottom: 8px; left: 8px; } .br { bottom: 8px; right: 8px; }
         
-        /* LABEL & WINDOW */
-        .label{width:100%;height:130px;background:var(--sticker);border-radius:8px;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;overflow:hidden}
-        .label-stripe{position:absolute;top:18px;left:0;width:100%;height:12px;background:linear-gradient(90deg, var(--pink), var(--gold), var(--cyan));opacity:0.9}
+        /* LABEL */
+        .label { width: 100%; height: 130px; background: #ccc; border-radius: 4px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; color: #111; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .label-top { width: 100%; height: 15px; background: linear-gradient(90deg, #ff0055, #ffcc00, #00f0ff); opacity: 0.8; }
+        .track-info { margin-top: 5px; text-align: center; width: 90%; z-index: 2; }
+        .title { font-weight: 900; font-size: 14px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .artist { font-size: 11px; font-weight: bold; color: #444; }
         
-        .window{width:220px;height:55px;background:rgba(20,20,20,0.9);border-radius:28px;margin-top:55px;border:3px solid #888;display:flex;justify-content:space-between;align-items:center;padding:0 20px;position:relative;box-shadow:inset 0 0 15px #000}
-        .spool{width:40px;height:40px;background:#eee;border-radius:50%;border:8px solid var(--tape);position:relative;box-shadow:0 0 5px #000}.spool::after{content:'';position:absolute;inset:0;background:conic-gradient(transparent 20%, #888 20% 40%, transparent 40% 60%, #888 60% 80%, transparent 80%);border-radius:50%;animation:spin 2s linear infinite;animation-play-state:paused}
-        .playing .spool::after{animation-play-state:running}
-        .tape-bridge{width:100px;height:25px;background:#111;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+        /* TAPE WINDOW */
+        .window { width: 200px; height: 50px; background: rgba(0,0,0,0.8); border-radius: 25px; margin-top: 10px; border: 2px solid #888; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; position: relative; }
+        .spool { width: 36px; height: 36px; background: #fff; border-radius: 50%; border: 6px solid #333; position: relative; }
+        .spool::after { content: ''; position: absolute; inset: 0; background: conic-gradient(transparent 20%, #999 20% 40%, transparent 40% 60%, #999 60% 80%, transparent 80%); border-radius: 50%; animation: spin 2s linear infinite; animation-play-state: paused; }
+        .playing .spool::after { animation-play-state: running; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
         
-        /* INFO DISPLAY */
-        .info{position:absolute;top:40px;width:90%;text-align:center;color:#222;z-index:5}
-        .title{font-weight:900;font-size:15px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.5px}
-        .artist{font-size:12px;font-weight:700;color:#555;margin-top:2px}
-        .time{font-size:11px;font-weight:bold;color:#444;margin-top:4px;font-family:monospace}
-
-        /* VISUALIZER */
-        .viz{position:absolute;top:5px;display:flex;gap:2px;height:12px;align-items:flex-end;opacity:0.6}
-        .bar{width:4px;background:var(--case);height:2px;animation:bounce 0.5s infinite alternate;animation-play-state:paused}
-        .playing .bar{animation-play-state:running}
-        @keyframes bounce{to{height:10px}} @keyframes spin{to{transform:rotate(360deg)}}
-
         /* CONTROLS */
-        .controls{margin-top:30px;display:flex;gap:15px;z-index:20}
-        .btn{width:50px;height:50px;background:linear-gradient(145deg, #222, #111);border:1px solid #333;border-radius:12px;color:#888;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 15px rgba(0,0,0,0.5);transition:0.1s}
-        .btn:active{transform:translateY(2px);box-shadow:0 2px 5px rgba(0,0,0,0.5)}
-        .play-btn{color:var(--cyan);border-color:rgba(0,243,255,0.2)}
-        .playing .play-btn{color:var(--pink);text-shadow:0 0 10px var(--pink);border-color:rgba(255,0,85,0.3)}
-
-        .extra-controls{margin-top:20px;display:flex;gap:10px}
-        .s-btn{padding:8px 16px;background:#222;border:1px solid #444;color:#ccc;border-radius:20px;font-size:12px;cursor:pointer}
+        .controls { margin-top: 30px; display: flex; gap: 15px; }
+        .btn { width: 60px; height: 60px; background: #222; border: 1px solid #444; border-radius: 50%; color: #888; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 10px rgba(0,0,0,0.3); transition: 0.1s; }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .play-btn { color: var(--accent); border-color: var(--accent); }
+        .playing .play-btn { color: #ff0055; border-color: #ff0055; text-shadow: 0 0 10px #ff0055; }
         
-        /* SEARCH */
-        .search-wrap{margin-top:25px;position:relative;width:300px}
-        input{width:100%;background:#000;border:1px solid #333;padding:12px;color:var(--cyan);font-family:monospace;text-align:center;border-radius:8px;outline:none;text-transform:uppercase}
+        /* DRAWER & SEARCH */
+        .search-container { margin-top: 25px; width: 300px; }
+        input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--accent); font-family: inherit; text-align: center; border-radius: 8px; outline: none; }
         
-        /* DRAWER (Playlist/Menu) */
-        .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);opacity:0;pointer-events:none;transition:0.3s;z-index:90}
-        .drawer{position:fixed;bottom:0;left:0;right:0;height:75vh;background:#1a1a1a;border-radius:20px 20px 0 0;transform:translateY(100%);transition:0.3s;padding:20px;z-index:100;display:flex;flex-direction:column;border-top:1px solid #333}
-        .active .drawer-overlay{opacity:1;pointer-events:all}
-        .active .drawer{transform:translateY(0)}
-        .drawer-header{text-align:center;color:#fff;margin-bottom:15px;font-weight:bold;text-transform:uppercase}
-        .drawer-content{overflow-y:auto;flex:1}
-        .item{padding:12px;border-bottom:1px solid #333;color:#bbb;cursor:pointer}
-        .item:hover{color:#fff;background:#222}
-        .item.active{color:var(--pink)}
-        .back-btn{padding:10px;text-align:center;background:#333;margin-bottom:10px;border-radius:8px;cursor:pointer}
-
-        /* AI MODAL */
-        .modal{position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:200;display:flex;flex-direction:column;justify-content:center;align-items:center;opacity:0;pointer-events:none;transition:0.3s}
-        .modal.open{opacity:1;pointer-events:all}
-        .modal input{margin-bottom:15px}
+        .drawer-btn { margin-top: 15px; padding: 10px 20px; background: #222; border: 1px solid #444; color: #ccc; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        
+        /* DRAWER OVERLAY */
+        .drawer { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; flex-direction: column; transform: translateY(100%); transition: 0.3s; padding: 20px; }
+        .drawer.open { transform: translateY(0); }
+        .drawer-header { text-align: center; color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 20px; }
+        .drawer-list { flex: 1; overflow-y: auto; }
+        .item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; color: #aaa; }
+        .item:hover { color: #fff; background: #1a1a1a; }
+        .close-btn { margin-top: 10px; padding: 15px; background: #333; color: #fff; border: none; width: 100%; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="cassette" id="deck">
+    <div class="deck-container" id="deck">
         <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
         <div class="label">
-            <div class="label-stripe"></div>
-            <div class="viz">
-                <div class="bar" style="animation-duration:0.4s"></div>
-                <div class="bar" style="animation-duration:0.6s"></div>
-                <div class="bar" style="animation-duration:0.3s"></div>
-                <div class="bar" style="animation-duration:0.5s"></div>
-            </div>
-            <div class="info">
+            <div class="label-top"></div>
+            <div class="track-info">
                 <div class="title" id="title">AURORA SYSTEM</div>
-                <div class="artist" id="artist">NO TAPE INSERTED</div>
-                <div class="time" id="time">0:00 / 0:00</div>
+                <div class="artist" id="artist">INSERT TAPE</div>
             </div>
             <div class="window">
                 <div class="spool"></div>
-                <div class="tape-bridge"></div>
                 <div class="spool"></div>
             </div>
         </div>
@@ -97,272 +74,102 @@
         <button class="btn" onclick="app.next()">⏭</button>
     </div>
 
-    <div class="extra-controls">
-        <button class="s-btn" onclick="app.ui.openDrawer('playlist')">☰ Playlist</button>
-        <button class="s-btn" onclick="app.ui.openDrawer('genres')">♪ Genres</button>
-        <button class="s-btn" onclick="app.ui.openModal(true)">🤖 AI DJ</button>
+    <div class="search-container">
+        <input type="text" id="search" placeholder="SEARCH / AI..." onchange="app.search(this.value)">
     </div>
+    
+    <button class="drawer-btn" onclick="app.ui.toggleDrawer(true)">☰ OPEN MENU</button>
 
-    <div class="search-wrap">
-        <input type="text" id="searchInput" placeholder="Search Tape..." onkeypress="if(event.key==='Enter') app.search()">
-    </div>
-
-    <!-- DRAWER -->
-    <div id="drawer-container">
-        <div class="drawer-overlay" onclick="app.ui.closeDrawer()"></div>
-        <div class="drawer">
-            <div class="drawer-header" id="drawer-title">MENU</div>
-            <div class="drawer-content" id="drawer-list"></div>
-        </div>
-    </div>
-
-    <!-- AI MODAL -->
-    <div class="modal" id="aiModal">
-        <input type="text" id="aiInput" placeholder="Describe mood...">
-        <div style="display:flex;gap:10px">
-            <button class="s-btn" onclick="app.askAI()">GENERATE</button>
-            <button class="s-btn" onclick="app.ui.openModal(false)">CANCEL</button>
-        </div>
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">GENRES & PLAYLIST</div>
+        <div class="drawer-list" id="list"></div>
+        <button class="close-btn" onclick="app.ui.toggleDrawer(false)">CLOSE</button>
     </div>
 
     <script>
         const app = {
-            state: { playlist: [], index: -1, isPlaying: false },
+            state: { p: [], i: 0 },
             audio: new Audio(),
             
             init() {
                 this.audio.onended = () => this.next();
-                this.audio.ontimeupdate = () => this.ui.updateTime();
-                this.audio.onplay = () => this.ui.setPlaying(true);
-                this.audio.onpause = () => this.ui.setPlaying(false);
-                this.audio.onerror = () => this.ui.setTitle("TAPE ERROR", "");
-                
-                // Загрузка каталога
+                this.audio.onplay = () => this.ui.setPlay(true);
+                this.audio.onpause = () => this.ui.setPlay(false);
                 this.loadGenres();
             },
 
-            async search(query) {
-                const q = query || document.getElementById('searchInput').value;
+            async search(q) {
                 if(!q) return;
-                this.ui.setTitle("SEARCHING...", "Please wait");
-                this.ui.closeDrawer();
-                
+                document.getElementById('title').innerText = "SEARCHING...";
                 try {
                     const res = await fetch(`/api/player/playlist?query=${encodeURIComponent(q)}`);
                     const data = await res.json();
-                    if(data.playlist && data.playlist.length) {
-                        this.startPlaylist(data.playlist);
+                    if(data.playlist?.length) {
+                        this.state.p = data.playlist;
+                        this.play(0);
+                        this.ui.renderPlaylist();
                     } else {
-                        this.ui.setTitle("NOT FOUND", "Try another query");
+                        document.getElementById('title').innerText = "NOT FOUND";
                     }
-                } catch(e) {
-                    this.ui.setTitle("NET ERROR", "Check console");
+                } catch(e) { 
+                    console.error(e);
+                    document.getElementById('title').innerText = "ERROR"; 
                 }
             },
 
-            async askAI() {
-                const prompt = document.getElementById('aiInput').value;
-                this.ui.openModal(false);
-                this.ui.setTitle("AI THINKING...", "Processing neural net");
-                
-                try {
-                    const res = await fetch(`/api/ai/dj?prompt=${encodeURIComponent(prompt)}`);
-                    const data = await res.json();
-                    if(data.playlist && data.playlist.length) {
-                        this.startPlaylist(data.playlist);
-                    } else {
-                        this.ui.setTitle("AI FAILED", "No tracks found");
-                    }
-                } catch(e) {
-                    this.ui.setTitle("AI ERROR", "Connection failed");
-                }
-            },
-
-            startPlaylist(tracks) {
-                this.state.playlist = tracks;
-                this.state.index = 0;
-                this.play(0);
-            },
-
-            play(index) {
-                if(index < 0 || index >= this.state.playlist.length) return;
-                const track = this.state.playlist[index];
-                this.state.index = index;
-                
-                this.ui.setTitle(track.title, track.artist);
-                this.audio.src = `/stream/${track.identifier}`;
+            play(i) {
+                if(!this.state.p[i]) return;
+                this.state.i = i;
+                const t = this.state.p[i];
+                document.getElementById('title').innerText = t.title;
+                document.getElementById('artist').innerText = t.artist;
+                this.audio.src = `/stream/${t.identifier}`;
                 this.audio.play();
             },
 
-            toggle() {
-                if(!this.audio.src) return;
-                this.audio.paused ? this.audio.play() : this.audio.pause();
-            },
+            toggle() { this.audio.paused ? this.audio.play() : this.audio.pause(); },
+            next() { this.play((this.state.i + 1) % this.state.p.length); },
+            prev() { this.play((this.state.i - 1 + this.state.p.length) % this.state.p.length); },
 
-            next() {
-                let nextIdx = this.state.index + 1;
-                if(nextIdx >= this.state.playlist.length) nextIdx = 0;
-                this.play(nextIdx);
-            },
-
-            prev() {
-                if(this.audio.currentTime > 3) {
-                    this.audio.currentTime = 0;
-                } else {
-                    let prevIdx = this.state.index - 1;
-                    if(prevIdx < 0) prevIdx = this.state.playlist.length - 1;
-                    this.play(prevIdx);
-                }
-            },
-
-            // --- UI ---
             ui: {
-                drawerOpen: false,
-                currentMenu: null,
-                genres: null,
-
-                setTitle(t, a) {
-                    document.getElementById('title').innerText = t;
-                    document.getElementById('artist').innerText = a;
+                setPlay(s) {
+                    document.getElementById('deck').classList.toggle('playing', s);
+                    document.getElementById('playBtn').innerText = s ? '⏸' : '▶';
                 },
-                updateTime() {
-                    const cur = app.audio.currentTime;
-                    const dur = app.audio.duration || 0;
-                    const fmt = (s) => {
-                        const m = Math.floor(s/60);
-                        const sec = Math.floor(s%60).toString().padStart(2,'0');
-                        return `${m}:${sec}`;
-                    };
-                    document.getElementById('time').innerText = `${fmt(cur)} / ${fmt(dur)}`;
+                toggleDrawer(s) {
+                    document.getElementById('drawer').classList.toggle('open', s);
                 },
-                setPlaying(state) {
-                    app.state.isPlaying = state;
-                    document.getElementById('deck').classList.toggle('playing', state);
-                    document.getElementById('playBtn').innerText = state ? '⏸' : '▶';
-                },
-                openDrawer(type) {
-                    const container = document.getElementById('drawer-container');
-                    const list = document.getElementById('drawer-list');
-                    const title = document.getElementById('drawer-title');
-                    
-                    container.classList.add('active');
-                    list.innerHTML = '';
-                    
-                    if(type === 'playlist') {
-                        title.innerText = "CURRENT SIDE A";
-                        app.state.playlist.forEach((t, i) => {
-                            const el = document.createElement('div');
-                            el.className = `item ${i === app.state.index ? 'active' : ''}`;
-                            el.innerText = `${i+1}. ${t.title}`;
-                            el.onclick = () => { app.play(i); this.closeDrawer(); };
-                            list.appendChild(el);
-                        });
-                    } else if(type === 'genres') {
-                        this.renderGenreMenu(app.genres.main_menu);
-                    }
-                },
-                closeDrawer() {
-                    document.getElementById('drawer-container').classList.remove('active');
-                },
-                openModal(state) {
-                    document.getElementById('aiModal').classList.toggle('open', state);
-                },
-                renderGenreMenu(menuNode) {
-                    const list = document.getElementById('drawer-list');
-                    const title = document.getElementById('drawer-title');
-                    
-                    title.innerText = menuNode.name || "MENU";
-                    list.innerHTML = '';
-
-                    // Back button if not main menu
-                    if(menuNode !== app.genres.main_menu) {
-                        const back = document.createElement('div');
-                        back.className = 'back-btn';
-                        back.innerText = '⬅ BACK';
-                        back.onclick = () => this.renderGenreMenu(app.genres.main_menu); // Simplified back
-                        list.appendChild(back);
-                    }
-
-                    if(menuNode.children) {
-                        for(const [key, val] of Object.entries(menuNode.children)) {
-                            const el = document.createElement('div');
-                            el.className = 'item';
-                            el.innerText = val.name;
-                            el.onclick = () => {
-                                if(val.children) {
-                                    this.renderGenreMenu(val);
-                                } else if(val.query) {
-                                    app.search(val.query);
-                                } else if(val.action === 'random_radio') {
-                                    app.search('random top hits');
-                                }
-                            };
-                            list.appendChild(el);
-                        }
-                    }
+                renderPlaylist() {
+                    const l = document.getElementById('list');
+                    l.innerHTML = '';
+                    app.state.p.forEach((t, i) => {
+                        let d = document.createElement('div');
+                        d.className = 'item';
+                        d.innerText = `${i+1}. ${t.title}`;
+                        d.onclick = () => { app.play(i); app.ui.toggleDrawer(false); };
+                        l.appendChild(d);
+                    });
                 }
             },
-            
-            async loadGenres() {
-                // Hardcoded fallback if JSON fetch fails, matches your request
-                // In real app, fetch from /genres.json
-                this.genres = {
-                    main_menu: {
-                        name: "GENRES",
-                        children: {
-                            rock: { 
-                                name: "🎸 Rock & Metal", 
-                                children: {
-                                    r60: { name: "60s/70s (Classic/Psych)", query: "classic rock 70s psychedelic" },
-                                    r80: { name: "80s (Glam/New Wave)", query: "80s rock new wave hits" },
-                                    r90: { name: "90s (Grunge/Britpop)", query: "90s grunge britpop hits" },
-                                    r00: { name: "00s (Indie/Nu-Metal)", query: "2000s indie rock nu metal" },
-                                    rmod: { name: "Modern (Post-Hardcore)", query: "modern rock post hardcore shoegaze" }
-                                }
-                            },
-                            hip: {
-                                name: "🎤 Hip-Hop",
-                                children: {
-                                    h80: { name: "80s Old School", query: "old school hip hop 80s" },
-                                    h90: { name: "90s Golden Age", query: "90s boom bap g funk" },
-                                    h00: { name: "00s Dirty South", query: "2000s hip hop hits crunk" },
-                                    h10: { name: "10s SoundCloud/Emo", query: "soundcloud rap emo trap hits" },
-                                    hnew: { name: "Modern Drill/Rage", query: "drill music rage rap" }
-                                }
-                            },
-                            elec: {
-                                name: "🎧 Electronic",
-                                children: {
-                                    e70: { name: "70s/80s Disco/Synth", query: "disco hits 80s synthpop" },
-                                    e90: { name: "90s Eurodance/DnB", query: "90s eurodance jungle dnb" },
-                                    e00: { name: "00s House/Dubstep", query: "electro house 2000s dubstep" },
-                                    e10: { name: "10s Trap/Future", query: "edm trap future bass hits" },
-                                    enew: { name: "Modern Phonk/Hyperpop", query: "drift phonk hyperpop" }
-                                }
-                            },
-                            pop: {
-                                name: "✨ Pop & R&B",
-                                children: {
-                                    p80: { name: "80s Pop/Synth-R&B", query: "80s pop hits synth rnb" },
-                                    p90: { name: "90s Boybands/R&B", query: "90s pop hits rnb" },
-                                    p00: { name: "00s Teen Pop", query: "2000s pop hits britney" },
-                                    pnew: { name: "Modern Pop/K-Pop", query: "top pop hits 2024 kpop" }
-                                }
-                            },
-                            jazz: {
-                                name: "🎷 Jazz & Soul",
-                                children: {
-                                    jold: { name: "Jazz 40s/50s (Bebop)", query: "bebop jazz miles davis" },
-                                    jsoul: { name: "Soul 60s/70s", query: "motown soul hits 70s" },
-                                    jmod: { name: "Modern Jazz/Acid", query: "acid jazz nu jazz" }
-                                }
-                            }
-                        }
-                    }
+
+            loadGenres() {
+                const genres = {
+                    "🎸 Rock Hits": "rock hits",
+                    "🎤 Hip-Hop": "hip hop hits",
+                    "🕺 Pop 2024": "pop hits 2024",
+                    "🏎 Phonk": "phonk drift",
+                    "💤 Chill": "lofi hip hop"
                 };
+                const l = document.getElementById('list');
+                for(let [k,v] of Object.entries(genres)) {
+                    let d = document.createElement('div');
+                    d.className = 'item';
+                    d.innerText = k;
+                    d.onclick = () => { app.search(v); app.ui.toggleDrawer(false); };
+                    l.appendChild(d);
+                }
             }
         };
-        
         window.onload = () => app.init();
     </script>
 </body>
