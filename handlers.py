@@ -138,4 +138,4 @@ def setup_handlers(app, radio, settings, downloader, spotify_service):
     app.add_handler(CommandHandler("admin", admin_command))
     app.add_handler(CommandHandler("status", status_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
-    app.add_handler(CallbackQueryHandler(button_callback))
+    # app.add_handler(CallbackQueryHandler(button_callback))
