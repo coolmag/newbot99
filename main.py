@@ -2,7 +2,7 @@ import logging
 import asyncio
 from pathlib import Path
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -127,8 +127,11 @@ async def telegram_webhook(request: Request):
         logger.error(f"Webhook error: {e}")
     return {"status": "ok"}
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    if Path("static/index.html").exists():
-        return FileResponse("static/index.html")
-    return {"status": "Aurora Bot Active"}
+    try:
+        with open("static/index.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Player not found</h1>", status_code=404)
+

@@ -11,50 +11,58 @@ settings = get_settings()
 
 class AIManager:
     """
-    🧠 AI Manager (Google Gemma Edition).
-    Primary: Gemma 2 (9b-it) via Google GenAI.
-    Backup: Gemini 1.5 Flash.
+    🧠 AI Manager (Gemma 3 Edition - 2026).
+    Target: Gemma 3 (12B/4B) via Google AI Studio.
+    Why: Best free tier limits (no strict RPD).
     """
     
     def __init__(self):
         self.client = None
         self.is_active = False
         
-        if settings.GOOGLE_API_KEY:
+        api_key = settings.GOOGLE_API_KEY
+        
+        if api_key:
             try:
-                self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
+                # Инициализация клиента v1beta (для новых моделей)
+                self.client = genai.Client(api_key=api_key)
                 self.is_active = True
-                logger.info("✅ Google Client connected. Target: Gemma 2.")
+                logger.info("✅ Google Client connected (Targeting Gemma 3).")
             except Exception as e:
                 logger.error(f"❌ Failed to init Google Client: {e}")
         else:
-            logger.warning("⚠️ GOOGLE_API_KEY not found!")
+            logger.warning("⚠️ GOOGLE_API_KEY is missing!")
 
     async def analyze_message(self, text: str) -> dict:
-        """Анализ намерения: Gemma 2"""
         if not self.is_active: return self._regex_fallback(text)
 
-        # Gemma лучше понимает простой промпт без спец. флагов JSON
+        # Промпт адаптирован для open-weights моделей типа Gemma
         prompt = f"""
-        Task: Analyze user message for a music bot.
-        Message: "{text}"
+        Act as a JSON API. 
+        Task: Analyze user request for a music bot.
+        Input: "{text}"
         
-        Output ONLY valid JSON:
+        Output Schema:
         {{
-            "intent": "radio" (play music/mix), "search" (specific song), or "chat" (talk),
-            "query": "search term or null"
+            "intent": "radio" | "search" | "chat",
+            "query": "string or null"
         }}
-        Do not write markdown or explanations. Just JSON.
+        
+        Rules:
+        - "radio": if user asks to play a genre, mood, mix, or flow.
+        - "search": if user asks for a specific song/artist.
+        - "chat": if user says hello, asks how are you, or talks off-topic.
+        
+        Response (JSON only):
         """
 
-        # Пробуем Gemma 2 (9B - оптимальная)
-        # Если не выйдет - откатимся на Gemini
-        models = ["gemma-2-9b-it", "gemma-2-27b-it", "gemini-1.5-flash"]
+        # Пробуем модели по убыванию "ума"
+        # gemma-3-12b-it - золотая середина
+        # gemma-3-4b-it - быстрая
+        models = ["gemma-3-12b-it", "gemma-3-4b-it", "gemini-1.5-flash"]
 
         for model in models:
             try:
-                # Gemma не поддерживает config={'response_mime_type': 'application/json'} так хорошо,
-                # как Gemini, поэтому убираем конфиг и парсим текст вручную.
                 response = await asyncio.to_thread(
                     self.client.models.generate_content,
                     model=model,
@@ -67,19 +75,23 @@ class AIManager:
                         logger.info(f"🤖 AI ({model}): {data}")
                         return data
             except Exception as e:
-                logger.warning(f"⚠️ Model {model} failed: {e}")
+                # Логируем ошибку, но пробуем следующую модель
+                # 404 означает, что модель недоступна на этом аккаунте/ключе
+                if "404" in str(e):
+                    logger.warning(f"⚠️ Model {model} not found (404). Trying next...")
+                else:
+                    logger.warning(f"⚠️ Model {model} error: {e}")
                 continue
 
         return self._regex_fallback(text)
 
     async def get_chat_response(self, prompt: str, system_prompt: str = "") -> str:
-        """Болталка: Gemma 2"""
-        if not self.is_active: return "AI не активен 🔌"
+        if not self.is_active: return "Мозг отключен 🔌"
 
         full_prompt = f"{system_prompt}\nUser: {prompt}"
         
-        # Для чата Gemma 2 9b отличный выбор
-        models = ["gemma-2-9b-it", "gemini-1.5-flash"]
+        # Для чата можно взять 27B для ума или 12B для скорости
+        models = ["gemma-3-12b-it", "gemma-3-27b-it"]
 
         for model in models:
             try:
@@ -96,9 +108,8 @@ class AIManager:
         return "Связь с космосом потеряна... 🛸"
 
     def _regex_fallback(self, text: str) -> dict:
-        """Запасной вариант без AI"""
         text_lower = text.lower()
-        radio_keywords = ['радио', 'radio', 'play', 'играй', 'включи', 'mix', 'поток']
+        radio_keywords = ['радио', 'radio', 'play', 'играй', 'включи', 'mix', 'поток', 'вайб']
         chat_keywords = ['привет', 'как дела', 'кто ты', 'расскажи', 'аврора']
 
         if any(k in text_lower for k in chat_keywords):
@@ -113,10 +124,10 @@ class AIManager:
     def _parse_json(self, text: str) -> Optional[dict]:
         """Умный парсер JSON, так как Gemma любит добавлять лишний текст"""
         try:
-            # Находим первую { и последнюю }
-            match = re.search(r"\{.*\}", text.replace("\n", " "), re.DOTALL)
+            # Gemma может быть многословной, вырезаем JSON
+            text = text.replace("```json", "").replace("```", "").strip()
+            match = re.search(r"\{{.*\}}", text.replace("\n", " "), re.DOTALL)
             if match:
-                clean_json = match.group(0)
-                return json.loads(clean_json)
-        except: pass
-        return None
+                return json.loads(match.group(0))
+            return json.loads(text)
+        except: return None
