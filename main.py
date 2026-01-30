@@ -52,7 +52,7 @@ async def startup_event():
     application = Application.builder().token(settings.BOT_TOKEN).build() # Use BOT_TOKEN from settings
     # bot = application.bot # Not needed globally
     radio_manager = RadioManager(application.bot, settings, downloader)
-    setup_handlers(application, radio_manager, downloader, spotify_service=None) # Added spotify_service=None to match setup_handlers signature
+    setup_handlers(application, radio_manager, settings, downloader, spotify_service=None) # Added spotify_service=None to match setup_handlers signature
     
     await application.initialize()
     await application.start()
