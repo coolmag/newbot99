@@ -3,6 +3,7 @@ import logging
 import asyncio
 import json
 import random
+import re
 from pathlib import Path
 
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
@@ -19,6 +20,7 @@ from youtube import YouTubeDownloader
 from chat_service import ChatManager
 from ai_personas import PERSONAS
 from ai_manager import AIManager
+from spotify import SpotifyService # Import for type hint
 # Импортируем nlp
 from nlp import analyze_message
 
@@ -347,7 +349,7 @@ def setup_handlers(app, radio, settings, downloader, spotify_service):
     app.add_handler(CommandHandler("radio", radio_command))
     app.add_handler(CommandHandler("stop", stop_command))
     app.add_handler(CommandHandler("admin", admin_command))
-    app.add_handler(CommandHandler("status", status_command))
+    # app.add_handler(CommandHandler("status", status_command)) # Temporarily disabled, calls non-existent method AIManager.test_provider
     app.add_handler(CommandHandler("test_ai", test_ai_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
     app.add_handler(CallbackQueryHandler(button_callback))

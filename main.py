@@ -11,6 +11,7 @@ from youtube import YouTubeDownloader
 from cache_service import CacheService
 from ai_manager import AIManager # Нужен для AI DJ
 from radio import RadioManager
+from spotify import SpotifyService # Import spotify
 
 # Логирование
 logging.basicConfig(level=logging.INFO)
@@ -33,6 +34,7 @@ app.add_middleware(
 # Services
 cache_service = CacheService(settings.CACHE_DB_PATH) # Initialize with path
 downloader = YouTubeDownloader(settings, cache_service)
+spotify_service = SpotifyService(settings, downloader) # Initialize spotify
 ai_manager = AIManager()
 
 # Переменные приложения
@@ -52,7 +54,7 @@ async def startup_event():
     application = Application.builder().token(settings.BOT_TOKEN).build() # Use BOT_TOKEN from settings
     # bot = application.bot # Not needed globally
     radio_manager = RadioManager(application.bot, settings, downloader)
-    setup_handlers(application, radio_manager, settings, downloader, spotify_service=None) # Added spotify_service=None to match setup_handlers signature
+    setup_handlers(application, radio_manager, settings, downloader, spotify_service=spotify_service) # Pass the real spotify_service
     
     await application.initialize()
     await application.start()
@@ -131,6 +133,7 @@ async def stream_track(video_id: str):
 # Webhook Handler
 @app.post("/telegram")
 async def telegram_webhook(request: Request):
+    logger.info("Received a request on the webhook.") # Added for debugging
     try:
         data = await request.json()
         from telegram import Update
