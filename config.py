@@ -18,60 +18,36 @@ class Settings(BaseSettings):
     BOT_TOKEN: str 
     WEBHOOK_URL: str = ""
     BASE_URL: str = ""
-    ADMIN_IDS: str = ""
     
-    COOKIES_CONTENT: str = ""
-    PO_TOKEN: Optional[str] = None
-    VISITOR_DATA: Optional[str] = None
-    PROXY_URL: Optional[str] = None
+    # Ключи и доступы
+    # Теперь автоматически подхватит GEMINI_API_KEY, если GOOGLE_API_KEY пуст
+    GOOGLE_API_KEY: str = ""
+    OPENROUTER_API_KEY: str = ""
     SPOTIFY_CLIENT_ID: Optional[str] = None
     SPOTIFY_CLIENT_SECRET: Optional[str] = None
-    OPENROUTER_API_KEY: str = ""
 
-    
-    COBALT_INSTANCES: Union[List[str], str, None] = None
-    PIPED_INSTANCES: Union[List[str], str, None] = None
-    INVIDIOUS_INSTANCES: Union[List[str], str, None] = None
-
-    GOOGLE_API_KEY: str = ""
-    VK_LOGIN: Optional[str] = None
-    VK_PASSWORD: Optional[str] = None
     ADMIN_ID_LIST: List[int] = []
     
+    # Пути
     BASE_DIR: Path = Path(__file__).resolve().parent
     DOWNLOADS_DIR: Path = BASE_DIR / "downloads"
-    TEMP_AUDIO_DIR: Path = BASE_DIR / "temp_audio"
     CACHE_DB_PATH: Path = BASE_DIR / "cache.db"
-    COOKIES_FILE: Path = BASE_DIR / "cookies.txt"
-    PROXIES_FILE: Path = BASE_DIR / "working_proxies.txt"
-    V2RAY_PROXIES_FILE: Path = BASE_DIR / "hiddify_compatible_v2ray_proxies.txt"
     
+    # Настройки
     LOG_LEVEL: str = "INFO"
     MAX_CONCURRENT_DOWNLOADS: int = 3
-    DOWNLOAD_TIMEOUT: int = 120
 
-    @field_validator("COBALT_INSTANCES", "PIPED_INSTANCES", "INVIDIOUS_INSTANCES", mode="before")
+    @field_validator("GOOGLE_API_KEY", mode="before")
     @classmethod
-    def _parse_instances(cls, v: Any, info: ValidationInfo) -> List[str]:
-        defaults = {
-            "COBALT_INSTANCES": ["https://api.cobalt.tools", "https://cobalt.ducks.party"],
-            "PIPED_INSTANCES": ["https://pipedapi.kavin.rocks", "https://pipedapi.moomoo.me"],
-            "INVIDIOUS_INSTANCES": ["https://inv.nadeko.net", "https://invidious.nerdvpn.de"]
-        }
-        field_name = info.field_name
-        default_list = defaults.get(field_name, [])
-        if v is None: return default_list
-        if isinstance(v, str):
-            v = v.strip()
-            if not v: return default_list
-            try: return json.loads(v)
-            except: return [i.strip() for i in v.split(",") if i.strip()]
-        if isinstance(v, list): return v
-        return default_list
+    def _fallback_google_key(cls, v: Any) -> str:
+        # Если ключ пустой, пробуем взять GEMINI_API_KEY
+        if v and str(v).strip():
+            return str(v)
+        return os.getenv("GEMINI_API_KEY", "")
 
     @field_validator("ADMIN_ID_LIST", mode="before")
     @classmethod
-    def _assemble_admin_ids(cls, v: Any, info: ValidationInfo) -> List[int]:
+    def _assemble_admin_ids(cls, v: Any) -> List[int]:
         if not v: return []
         try: return [int(i.strip()) for i in str(v).split(",") if i.strip()]
         except: return []
