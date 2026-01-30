@@ -5,14 +5,11 @@ from typing import List, Optional
 
 import yt_dlp
 from ytmusicapi import YTMusic
-from config import get_settings # Added get_settings for consistency
+from config import get_settings, Settings
 from models import DownloadResult, TrackInfo
 from cache_service import CacheService
 
 logger = logging.getLogger(__name__)
-
-# Moved settings initialization to module level for consistency
-settings = get_settings()
 
 class YouTubeDownloader:
     """
