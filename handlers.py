@@ -2,13 +2,8 @@ from __future__ import annotations
 import logging
 import asyncio
 import json
-import random
-import re
-from pathlib import Path
-
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.constants import ParseMode, ChatType
-from telegram.error import BadRequest
 from telegram.ext import (
     Application, CommandHandler, ContextTypes, CallbackQueryHandler,
     MessageHandler, filters
@@ -16,7 +11,6 @@ from telegram.ext import (
 
 from radio import RadioManager
 from config import Settings, get_settings
-from youtube import YouTubeDownloader
 from chat_service import ChatManager
 from ai_personas import PERSONAS
 from spotify import SpotifyService
@@ -70,7 +64,6 @@ async def _do_radio(chat_id: int, query: str, context: ContextTypes.DEFAULT_TYPE
 async def _do_chat_reply(chat_id: int, text: str, user_name: str, context: ContextTypes.DEFAULT_TYPE, update: Update):
     await context.bot.send_chat_action(chat_id=chat_id, action="typing")
     response = await ChatManager.get_response(chat_id, text, user_name)
-    if not response: response = "..."
     await update.message.reply_text(response)
 
 # --- HANDLER ---
@@ -88,7 +81,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = text
 
     try:
-        # 🔥 ВОТ ГЛАВНОЕ ИСПРАВЛЕНИЕ 🔥
+        # 🔥 АНАЛИЗ ИИ 🔥
         analysis = await analyze_message(text)
         
         # Проверяем, что вернулся словарь
@@ -117,72 +110,32 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if is_direct:
             await _do_chat_reply(chat_id, text, update.effective_user.first_name, context, update)
 
-# --- ADMIN / COMMANDS ---
-async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    settings = get_settings()
-    if update.effective_user.id not in settings.ADMIN_ID_LIST:
-        await update.message.reply_text("⛔️ У вас нет прав админа.")
-        return
-
-    chat_id = update.effective_chat.id
-    current_mode = ChatManager.get_mode(chat_id)
-    text = f"🤖 Режим AI: *{current_mode.upper()}*\nВыберите личность:"
-    keyboard = []
-    row = []
-    for mode in PERSONAS.keys():
-        btn_text = f"✅ {mode.upper()}" if mode == current_mode else mode.upper()
-        row.append(InlineKeyboardButton(btn_text, callback_data=f"set_mode|{mode}"))
-        if len(row) == 2: keyboard.append(row); row = []
-    if row: keyboard.append(row)
-    keyboard.append([InlineKeyboardButton("❌ Закрыть", callback_data="close_admin")])
-    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, reply_markup=InlineKeyboardMarkup(keyboard))
-
-async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    settings = get_settings()
-    await query.answer()
-
-    if query.data == "close_admin":
-        await query.delete_message()
-    elif query.data.startswith("set_mode|"):
-        if query.from_user.id not in settings.ADMIN_ID_LIST:
-            await query.answer("⛔️ Только для админа!", show_alert=True)
-            return
-        mode = query.data.split("|")[1]
-        ChatManager.set_mode(update.effective_chat.id, mode)
-        greeting = GREETINGS.get(mode, ["Привет!"])[0]
-        await context.bot.send_message(update.effective_chat.id, f"Режим изменен: {mode}\n\n{greeting}")
+# --- SETUP ---
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🎧 Aurora AI v3.0 (Fixed). Пиши жанр!")
+    await update.message.reply_text("🎧 Aurora AI v3.0. Пиши жанр!")
 
-async def play_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _do_play(update.effective_chat.id, " ".join(context.args), context, update)
-
-async def radio_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _do_radio(update.effective_chat.id, " ".join(context.args), context, update)
+async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Админка временно отключена.")
 
 async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.application.radio_manager.stop(update.effective_chat.id)
     await update.message.reply_text("🛑 Стоп.")
 
-async def test_ai_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    from ai_manager import AIManager
-    ai = AIManager()
-    res = await ai.analyze_message("тест")
-    await update.message.reply_text(f"AI Test Result: {res}")
+async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    mode = ChatManager.get_mode(chat_id)
+    await update.message.reply_text(f"📊 Статус:\n• Режим чата: {mode}\n• AI: Gemma 3 (Active)")
 
 def setup_handlers(app, radio, settings, downloader, spotify_service):
     app.downloader = downloader
     app.radio_manager = radio
-    app.settings = settings
     app.spotify_service = spotify_service
+    app.settings = settings
+    
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("play", play_command))
-    app.add_handler(CommandHandler("radio", radio_command))
     app.add_handler(CommandHandler("stop", stop_command))
     app.add_handler(CommandHandler("admin", admin_command))
-    # app.add_handler(CommandHandler("status", status_command)) # Temporarily disabled, calls non-existent method AIManager.test_provider
-    app.add_handler(CommandHandler("test_ai", test_ai_command))
+    app.add_handler(CommandHandler("status", status_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
     app.add_handler(CallbackQueryHandler(button_callback))
