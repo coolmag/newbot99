@@ -1,7 +1,7 @@
 import logging
 import random
 from pathlib import Path
-from typing import List, Optional, Dict
+from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -13,49 +13,44 @@ class ProxyManager:
         self._load_proxies()
 
     def _load_proxies(self):
-        """Загружает только HTTP/SOCKS прокси. VLESS игнорируем (нужен Xray)."""
+        """Загружает рабочие прокси из working_proxies.txt."""
         self._proxies = []
         
         if not self._proxy_file.exists():
-            logger.warning(f"⚠️ Proxy file not found: {self._proxy_file}")
+            logger.error(f"'{self._proxy_file.name}' not found! No proxies to load.")
             return
 
         try:
             with open(self._proxy_file, "r") as f:
                 for line in f:
-                    p = line.strip()
-                    # Python native lib support only http/socks
-                    if p and (p.startswith("http") or p.startswith("socks")):
-                        self._proxies.append(p)
+                    proxy = line.strip()
+                    if proxy:
+                        self._proxies.append(proxy)
             
-            if self._proxies:
-                random.shuffle(self._proxies)
-                logger.info(f"🛡 Loaded {len(self._proxies)} active proxies (HTTP/SOCKS).")
-            else:
-                logger.warning("⚠️ No compatible (http/socks) proxies found in file.")
+            if not self._proxies:
+                logger.warning("working_proxies.txt is empty.")
+                return
+            
+            random.shuffle(self._proxies)
+            logger.info(f"Loaded and shuffled {len(self._proxies)} working proxies from {self._proxy_file.name}.")
 
         except Exception as e:
-            logger.error(f"❌ Proxy load error: {e}")
+            logger.error(f"Failed to load proxies from {self._proxy_file.name}: {e}")
 
     def get_proxy(self) -> Optional[str]:
-        """Возвращает строку прокси и делает ротацию."""
-        if not self._proxies: return None
+        """Возвращает следующий прокси из списка, циклически."""
+        if not self._proxies:
+            return None
         
-        # Round-robin
+        # Берем прокси и перекладываем его в конец списка, чтобы обеспечить ротацию
         proxy = self._proxies.pop(0)
         self._proxies.append(proxy)
+        
         return proxy
 
-    def get_yt_dlp_proxy_opts(self) -> Dict:
-        """Формирует конфиг для yt-dlp"""
-        proxy = self.get_proxy()
-        if proxy:
-            # yt-dlp принимает ключ http_proxy даже для socks5
-            return {'http_proxy': proxy}
-        return {}
-
     def report_dead_proxy(self, proxy: str):
-        """Удаляет битый прокси из ротации"""
+        """Удаляет "мертвый" прокси из текущей сессии."""
         if proxy in self._proxies:
             self._proxies.remove(proxy)
-            logger.warning(f"⚰️ Proxy died: {proxy}. Remaining: {len(self._proxies)}")
+            logger.warning(f"Proxy {proxy} reported as dead and removed from the pool. {len(self._proxies)} remaining.")
+        
