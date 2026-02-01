@@ -11,7 +11,8 @@ from cache_service import CacheService
 
 logger = logging.getLogger(__name__)
 
-class MyLogger:
+# 🔥 СПЕЦИАЛЬНЫЙ ЛОГГЕР, КОТОРЫЙ МОЛЧИТ
+class QuietLogger:
     def debug(self, msg): pass
     def warning(self, msg): pass
     def error(self, msg): logger.error(msg)
@@ -21,10 +22,11 @@ class YouTubeDownloader:
         self._settings = settings
         self._cache = cache_service
         self._settings.DOWNLOADS_DIR.mkdir(exist_ok=True)
-        self.semaphore = asyncio.Semaphore(3)
+        self.semaphore = asyncio.Semaphore(3) # Ограничение одновременных загрузок
         self.ytmusic = YTMusic() 
 
     async def search(self, query: str, limit: int = 10, **kwargs) -> List[TrackInfo]:
+        """Поиск треков в YouTube Music"""
         if kwargs.get('decade'):
             query = f"{query} {kwargs['decade']}"
         if not query or not query.strip(): return []
@@ -52,11 +54,11 @@ class YouTubeDownloader:
                         duration = int(parts[0])
                 except: pass
                 
-                if duration > 900: continue
+                if duration > 900: continue # Пропускаем длинные миксы (>15 мин)
 
                 track = TrackInfo(
                     identifier=video_id,
-                    title=item.get('title', 'Unknown'),
+                    title=title,
                     uploader=artists,
                     duration=duration,
                     thumbnail_url=item.get('thumbnails', [{}])[-1].get('url'),
@@ -69,11 +71,40 @@ class YouTubeDownloader:
             logger.error(f"Search error: {e}")
             return []
 
+    async def get_track_info(self, video_id: str) -> Optional[TrackInfo]:
+        """Получение метаданных трека по ID"""
+        try:
+            loop = asyncio.get_running_loop()
+            info = await loop.run_in_executor(None, lambda: self.ytmusic.get_song(video_id))
+            video_details = info.get('videoDetails', {})
+            if not video_details: return None
+            
+            thumbnails = video_details.get('thumbnail', {}).get('thumbnails', [])
+            thumb_url = thumbnails[-1]['url'] if thumbnails else None
+
+            return TrackInfo(
+                identifier=video_details.get('videoId', video_id),
+                title=video_details.get('title', 'Unknown'),
+                uploader=video_details.get('author', 'Unknown'),
+                duration=int(video_details.get('lengthSeconds', 0)),
+                thumbnail_url=thumb_url,
+                source="ytmusic"
+            )
+        except Exception as e:
+            logger.error(f"Metadata fetch error for {video_id}: {e}")
+            return None
+
     async def download(self, video_id: str, track_info: Optional[TrackInfo] = None) -> DownloadResult:
+        """Скачивание трека"""
         final_path = self._settings.DOWNLOADS_DIR / f"{video_id}.mp3"
         
+        # Если файл уже есть в кэше
         if final_path.exists() and final_path.stat().st_size > 10000:
             return DownloadResult(success=True, file_path=final_path, track_info=track_info)
+
+        # Если инфо не передали, пытаемся найти
+        if not track_info:
+            track_info = await self.get_track_info(video_id)
 
         async with self.semaphore:
             query = f"{track_info.uploader} - {track_info.title}" if track_info else video_id
@@ -81,6 +112,7 @@ class YouTubeDownloader:
             return await self._download_sc(query, final_path, track_info)
 
     async def _download_sc(self, query: str, target_path: Path, track_info: TrackInfo) -> DownloadResult:
+        """Внутренний метод скачивания через SoundCloud (быстро)"""
         temp_path = str(target_path).replace(".mp3", "_temp")
         
         opts = {
@@ -88,13 +120,15 @@ class YouTubeDownloader:
             'outtmpl': temp_path,
             'quiet': True,
             'no_warnings': True,
-            'logger': MyLogger(), # Перехватываем логи
+            'logger': QuietLogger(), # Используем наш "тихий" логгер
+            'noprogress': True,      # Отключаем прогресс-бар
             'noplaylist': True,
             'postprocessors': [{'key': 'FFmpegExtractAudio','preferredcodec': 'mp3'}],
         }
         
         try:
             loop = asyncio.get_running_loop()
+            # scsearch1: ищет 1 лучший результат на SoundCloud
             await loop.run_in_executor(None, lambda: self._run_yt_dlp(opts, f"scsearch1:{query}"))
             
             paths = [Path(temp_path + ".mp3"), Path(temp_path)]
