@@ -7,17 +7,20 @@ ai_manager = AIManager()
 
 class ChatManager:
     """
-    Только генерация ответов. Состояние хранится в Telegram Context.
+    Генерация ответов с учетом контекста.
     """
     @staticmethod
     async def get_response(text: str, user_name: str, mode: str = "default") -> str:
-        # Получаем промпт для конкретного режима
         system_prompt = get_system_prompt(mode)
-        full_prompt = f"{system_prompt}\n(User name: {user_name})"
         
         try:
-            # Gemma 3 / Gemini
-            return await ai_manager.get_chat_response(text, system_prompt=full_prompt)
+            # ИСПРАВЛЕНО: Передаем user_name вторым аргументом
+            return await ai_manager.get_chat_response(text, user_name, system_prompt=system_prompt)
         except Exception as e:
             logger.error(f"Chat error: {e}")
-            return "Что-то с памятью моей... 🤯"
+            return "Что-то нейросети сегодня штормит... 🤯"
+
+class QuizManager:
+    @staticmethod
+    def start_quiz(chat_id: int):
+        return "Викторина пока в разработке! 🔧"

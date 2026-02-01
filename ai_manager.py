@@ -2,7 +2,7 @@ import logging
 import json
 import asyncio
 import re
-from typing import Optional, List
+from typing import Optional
 from google import genai
 from config import get_settings
 
@@ -11,93 +11,83 @@ settings = get_settings()
 
 class AIManager:
     """
-    🧠 AI Manager (Context Aware).
-    Target: Gemma 3 (12B-it).
-    Features: Short-term memory & strict intent classification.
+    🧠 AI Manager (2026 Standard).
+    Primary: Gemma 3 (12B/4B).
+    Fallback: Gemini 2.0 Flash (LTS).
     """
     
     def __init__(self):
         self.client = None
         self.is_active = False
-        # Простая память: {chat_id: [msg1, msg2]}
-        self.history = {} 
         
         api_key = settings.GOOGLE_API_KEY
         if api_key:
             try:
                 self.client = genai.Client(api_key=api_key)
                 self.is_active = True
-                logger.info("✅ Gemma 3 Connected.")
+                logger.info("✅ Google AI Connected (2026 Stack).")
             except Exception as e:
                 logger.error(f"❌ Failed to init AI: {e}")
 
     async def analyze_message(self, text: str) -> dict:
-        """Определяем намерение: Музыка или Чат?"""
         if not self.is_active: return self._regex_fallback(text)
 
-        # Промпт стал строже
         prompt = f"""
-        Classify user message for a Music Bot.
+        Classify user message.
         Input: "{text}"
-        
-        Rules:
-        1. "radio": user asks to play genre, mood, playlist, 'something like...', 'mix'.
-        2. "search": user asks for specific song/artist name.
-        3. "chat": user says hello, asks questions, talks about life, or gives feedback.
-        
-        Output JSON ONLY:
-        {{"intent": "radio"|"search"|"chat", "query": "search term or null"}}
+        Output JSON ONLY: {{"intent": "radio"|"search"|"chat", "query": "string or null"}}
         """
 
-        model = "gemma-3-12b-it" 
-        
-        try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=model,
-                contents=prompt
-            )
-            if response.text:
-                return self._parse_json(response.text) or self._regex_fallback(text)
-        except Exception as e:
-            logger.warning(f"AI Analysis Error: {e}")
-            
+        # Актуальный стек моделей 2026
+        models = ["gemma-3-12b-it", "gemma-3-4b-it", "gemini-2.0-flash"]
+
+        for model in models:
+            try:
+                response = await asyncio.to_thread(
+                    self.client.models.generate_content,
+                    model=model,
+                    contents=prompt
+                )
+                if response.text:
+                    res = self._parse_json(response.text)
+                    if res: return res
+            except Exception as e:
+                # Если 503 (перегрузка) или 404 (нет доступа) - идем к следующей
+                logger.warning(f"⚠️ Model {model} error: {e}")
+                continue
+
         return self._regex_fallback(text)
 
     async def get_chat_response(self, text: str, user_name: str, system_prompt: str = "") -> str:
-        """Генерация ответа с учетом контекста"""
         if not self.is_active: return "Мозг оффлайн 🔌"
 
-        # Формируем контекст (последние сообщения)
-        # В реальном проекте тут нужен chat_id, но пока упростим
         context = f"System: {system_prompt}\nUser ({user_name}): {text}"
         
-        model = "gemma-3-12b-it"
+        # Для чата 12B идеальна, 4B быстрая
+        models = ["gemma-3-12b-it", "gemma-3-4b-it", "gemini-2.0-flash"]
 
-        try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=model,
-                contents=context
-            )
-            
-            answer = response.text
-            if not answer or len(answer) < 2:
-                return "..."
-            
-            # Убираем кавычки, если модель их добавила
-            return answer.strip('"')
-            
-        except Exception as e:
-            logger.error(f"Chat Gen Error: {e}")
-            return "Связь прервалась..."
+        for model in models:
+            try:
+                response = await asyncio.to_thread(
+                    self.client.models.generate_content,
+                    model=model,
+                    contents=context
+                )
+                
+                answer = response.text
+                if answer and len(answer) > 1:
+                    return answer.strip('"')
+            except Exception as e:
+                logger.warning(f"⚠️ Chat {model} failed: {e}")
+                continue
+
+        return "Связь с космосом прервалась... 🛸"
 
     def _regex_fallback(self, text: str) -> dict:
         text_lower = text.lower()
         if any(k in text_lower for k in ['играй', 'play', 'включи', 'радио', 'mix']):
             clean = text_lower.replace('играй','').replace('включи','').replace('радио','').strip()
             return {"intent": "radio", "query": clean or "top hits"}
-        
         return {"intent": "chat", "query": text}
 
     def _parse_json(self, text: str) -> Optional[dict]:
