@@ -5,21 +5,18 @@ from typing import List, Optional
 
 import yt_dlp
 from ytmusicapi import YTMusic
-from config import Settings, get_settings
+from config import Settings
 from models import DownloadResult, TrackInfo
 from cache_service import CacheService
 
 logger = logging.getLogger(__name__)
-settings = get_settings()
+
+class MyLogger:
+    def debug(self, msg): pass
+    def warning(self, msg): pass
+    def error(self, msg): logger.error(msg)
 
 class YouTubeDownloader:
-    """
-    ⚡ Speed Edition (v49).
-    Added: Metadata fallback fetcher for direct streams.
-    Search: YTMusic.
-    Download: SoundCloud (Fast Mode).
-    """
-    
     def __init__(self, settings: Settings, cache_service: CacheService):
         self._settings = settings
         self._cache = cache_service
@@ -55,11 +52,11 @@ class YouTubeDownloader:
                         duration = int(parts[0])
                 except: pass
                 
-                if duration > 900: continue 
+                if duration > 900: continue
 
                 track = TrackInfo(
                     identifier=video_id,
-                    title=title,
+                    title=item.get('title', 'Unknown'),
                     uploader=artists,
                     duration=duration,
                     thumbnail_url=item.get('thumbnails', [{}])[-1].get('url'),
@@ -72,54 +69,26 @@ class YouTubeDownloader:
             logger.error(f"Search error: {e}")
             return []
 
-    async def get_track_info(self, video_id: str) -> Optional[TrackInfo]:
-        """Получает метаданные трека по ID, если они не были переданы."""
-        try:
-            loop = asyncio.get_running_loop()
-            info = await loop.run_in_executor(None, lambda: self.ytmusic.get_song(video_id))
-            video_details = info.get('videoDetails', {})
-            if not video_details: return None
-            
-            thumbnails = video_details.get('thumbnail', {}).get('thumbnails', [])
-            thumb_url = thumbnails[-1]['url'] if thumbnails else None
-
-            return TrackInfo(
-                identifier=video_details.get('videoId', video_id),
-                title=video_details.get('title', 'Unknown'),
-                uploader=video_details.get('author', 'Unknown'),
-                duration=int(video_details.get('lengthSeconds', 0)),
-                thumbnail_url=thumb_url,
-                source="ytmusic"
-            )
-        except Exception as e:
-            logger.error(f"Metadata fetch error for {video_id}: {e}")
-            return None
-
     async def download(self, video_id: str, track_info: Optional[TrackInfo] = None) -> DownloadResult:
         final_path = self._settings.DOWNLOADS_DIR / f"{video_id}.mp3"
         
-        # Кэш есть - отдаем сразу (метаданные для стриминга не критичны, если файл уже есть)
         if final_path.exists() and final_path.stat().st_size > 10000:
             return DownloadResult(success=True, file_path=final_path, track_info=track_info)
 
-        # Если метаданных нет - пытаемся их достать (иначе поиск в SoundCloud не сработает)
-        if not track_info:
-            logger.info(f"ℹ️ Info missing for {video_id}, fetching metadata...")
-            track_info = await self.get_track_info(video_id)
-
         async with self.semaphore:
-            # Если удалось достать инфо - ищем по "Artist - Title", иначе (худший вариант) по ID
             query = f"{track_info.uploader} - {track_info.title}" if track_info else video_id
-            logger.info(f"☁️ Fast Download (SC): {query}")
+            logger.info(f"☁️ Downloading: {query}")
             return await self._download_sc(query, final_path, track_info)
 
-    async def _download_sc(self, query: str, target_path: Path, track_info: Optional[TrackInfo] = None) -> DownloadResult:
+    async def _download_sc(self, query: str, target_path: Path, track_info: TrackInfo) -> DownloadResult:
         temp_path = str(target_path).replace(".mp3", "_temp")
         
         opts = {
             'format': 'bestaudio/best',
             'outtmpl': temp_path,
             'quiet': True,
+            'no_warnings': True,
+            'logger': MyLogger(), # Перехватываем логи
             'noplaylist': True,
             'postprocessors': [{'key': 'FFmpegExtractAudio','preferredcodec': 'mp3'}],
         }
@@ -135,10 +104,9 @@ class YouTubeDownloader:
                         if target_path.exists(): target_path.unlink()
                         p.rename(target_path)
                     
-                    logger.info(f"✅ Downloaded: {query}")
+                    logger.info(f"✅ Finished: {query}")
                     return DownloadResult(success=True, file_path=target_path, track_info=track_info)
             
-            logger.warning(f"SC search found nothing for: {query}")
             return DownloadResult(success=False, error_message="Not found on SoundCloud")
             
         except Exception as e:
