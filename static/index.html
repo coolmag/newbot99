@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aurora Player</title>
+    <title>Aurora Deck</title>
     <style>
-        :root { --bg: #121212; --deck: #1e1e1e; --accent: #00f0ff; --text: #eee; }
+        :root { --bg: #121212; --deck: #1e1e1e; --accent: #00f0ff; --pink: #ff0055; --text: #eee; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; user-select: none; }
         
@@ -16,7 +16,7 @@
         
         /* LABEL */
         .label { width: 100%; height: 130px; background: #ccc; border-radius: 4px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; color: #111; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-        .label-top { width: 100%; height: 15px; background: linear-gradient(90deg, #ff0055, #ffcc00, #00f0ff); opacity: 0.8; }
+        .label-top { width: 100%; height: 15px; background: linear-gradient(90deg, var(--pink), #ffcc00, var(--accent)); opacity: 0.8; }
         .track-info { margin-top: 5px; text-align: center; width: 90%; z-index: 2; }
         .title { font-weight: 900; font-size: 14px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .artist { font-size: 11px; font-weight: bold; color: #444; }
@@ -33,19 +33,25 @@
         .btn { width: 60px; height: 60px; background: #222; border: 1px solid #444; border-radius: 50%; color: #888; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 10px rgba(0,0,0,0.3); transition: 0.1s; }
         .btn:active { transform: translateY(2px); box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
         .play-btn { color: var(--accent); border-color: var(--accent); }
-        .playing .play-btn { color: #ff0055; border-color: #ff0055; text-shadow: 0 0 10px #ff0055; }
+        .playing .play-btn { color: var(--pink); border-color: var(--pink); text-shadow: 0 0 10px var(--pink); }
         
-        /* DRAWER & SEARCH */
-        .search-container { margin-top: 25px; width: 300px; }
+        /* AI & MENU BTNS */
+        .extra-btns { margin-top: 20px; display: flex; gap: 10px; }
+        .small-btn { padding: 10px 20px; background: #222; border: 1px solid #444; color: #ccc; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        
+        /* SEARCH */
+        .search-container { margin-top: 15px; width: 300px; }
         input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--accent); font-family: inherit; text-align: center; border-radius: 8px; outline: none; }
         
-        .drawer-btn { margin-top: 15px; padding: 10px 20px; background: #222; border: 1px solid #444; color: #ccc; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        /* DRAWERS (MENU & AI) */
+        .drawer, .ai-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; flex-direction: column; transform: translateY(100%); transition: 0.3s; padding: 20px; }
+        .drawer.open, .ai-modal.open { transform: translateY(0); }
         
-        /* DRAWER OVERLAY */
-        .drawer { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; flex-direction: column; transform: translateY(100%); transition: 0.3s; padding: 20px; }
-        .drawer.open { transform: translateY(0); }
+        .ai-modal { justify-content: center; align-items: center; }
+        .ai-modal input { margin-bottom: 20px; width: 80%; max-width: 400px; }
+        
         .drawer-header { text-align: center; color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 20px; }
-        .drawer-list { flex: 1; overflow-y: auto; }
+        .drawer-list { flex: 1; overflow-y: auto; width: 100%; }
         .item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; color: #aaa; }
         .item:hover { color: #fff; background: #1a1a1a; }
         .close-btn { margin-top: 10px; padding: 15px; background: #333; color: #fff; border: none; width: 100%; border-radius: 8px; cursor: pointer; }
@@ -61,10 +67,7 @@
                 <div class="title" id="title">AURORA SYSTEM</div>
                 <div class="artist" id="artist">INSERT TAPE</div>
             </div>
-            <div class="window">
-                <div class="spool"></div>
-                <div class="spool"></div>
-            </div>
+            <div class="window"><div class="spool"></div><div class="spool"></div></div>
         </div>
     </div>
 
@@ -74,16 +77,30 @@
         <button class="btn" onclick="app.next()">⏭</button>
     </div>
 
+    <div class="extra-btns">
+        <button class="small-btn" onclick="app.ui.toggleDrawer('menu', true)">☰ MENU</button>
+        <button class="small-btn" onclick="app.ui.toggleDrawer('ai', true)">🤖 AI DJ</button>
+    </div>
+
     <div class="search-container">
-        <input type="text" id="search" placeholder="SEARCH / AI..." onchange="app.search(this.value)">
+        <input type="text" id="search" placeholder="SEARCH TAPE..." onchange="app.search(this.value)">
     </div>
     
-    <button class="drawer-btn" onclick="app.ui.toggleDrawer(true)">☰ OPEN MENU</button>
-
-    <div class="drawer" id="drawer">
-        <div class="drawer-header">GENRES & PLAYLIST</div>
+    <!-- MENU DRAWER -->
+    <div class="drawer" id="menuDrawer">
+        <div class="drawer-header">GENRES</div>
         <div class="drawer-list" id="list"></div>
-        <button class="close-btn" onclick="app.ui.toggleDrawer(false)">CLOSE</button>
+        <button class="close-btn" onclick="app.ui.toggleDrawer('menu', false)">CLOSE</button>
+    </div>
+
+    <!-- AI MODAL -->
+    <div class="ai-modal" id="aiModal">
+        <h2 style="color:var(--accent)">AI GENERATOR</h2>
+        <input type="text" id="aiPrompt" placeholder="Mood, Genre, Activity...">
+        <div style="display:flex; gap:10px; width:80%; max-width:400px">
+            <button class="close-btn" style="background:var(--pink)" onclick="app.askAI()">GENERATE</button>
+            <button class="close-btn" onclick="app.ui.toggleDrawer('ai', false)">CANCEL</button>
+        </div>
     </div>
 
     <script>
@@ -100,20 +117,33 @@
 
             async search(q) {
                 if(!q) return;
-                document.getElementById('title').innerText = "SEARCHING...";
+                this.ui.setTitle("SEARCHING...", "");
                 try {
                     const res = await fetch(`/api/player/playlist?query=${encodeURIComponent(q)}`);
                     const data = await res.json();
-                    if(data.playlist?.length) {
-                        this.state.p = data.playlist;
-                        this.play(0);
-                        this.ui.renderPlaylist();
-                    } else {
-                        document.getElementById('title').innerText = "NOT FOUND";
-                    }
-                } catch(e) { 
-                    console.error(e);
-                    document.getElementById('title').innerText = "ERROR"; 
+                    this.handleData(data);
+                } catch(e) { this.ui.setTitle("ERROR", "NET"); }
+            },
+
+            async askAI() {
+                const p = document.getElementById('aiPrompt').value;
+                if(!p) return;
+                this.ui.toggleDrawer('ai', false);
+                this.ui.setTitle("AI THINKING...", "PLEASE WAIT");
+                try {
+                    const res = await fetch(`/api/ai/dj?prompt=${encodeURIComponent(p)}`);
+                    const data = await res.json();
+                    this.handleData(data);
+                } catch(e) { this.ui.setTitle("AI ERROR", "OFFLINE"); }
+            },
+
+            handleData(data) {
+                if(data.playlist?.length) {
+                    this.state.p = data.playlist;
+                    this.play(0);
+                    this.ui.renderPlaylist();
+                } else {
+                    this.ui.setTitle("NOT FOUND", "TRY AGAIN");
                 }
             },
 
@@ -121,8 +151,7 @@
                 if(!this.state.p[i]) return;
                 this.state.i = i;
                 const t = this.state.p[i];
-                document.getElementById('title').innerText = t.title;
-                document.getElementById('artist').innerText = t.artist;
+                this.ui.setTitle(t.title, t.artist);
                 this.audio.src = `/stream/${t.identifier}`;
                 this.audio.play();
             },
@@ -136,8 +165,13 @@
                     document.getElementById('deck').classList.toggle('playing', s);
                     document.getElementById('playBtn').innerText = s ? '⏸' : '▶';
                 },
-                toggleDrawer(s) {
-                    document.getElementById('drawer').classList.toggle('open', s);
+                setTitle(t, a) {
+                    document.getElementById('title').innerText = t;
+                    document.getElementById('artist').innerText = a;
+                },
+                toggleDrawer(type, s) {
+                    const id = type === 'menu' ? 'menuDrawer' : 'aiModal';
+                    document.getElementById(id).classList.toggle('open', s);
                 },
                 renderPlaylist() {
                     const l = document.getElementById('list');
@@ -146,26 +180,28 @@
                         let d = document.createElement('div');
                         d.className = 'item';
                         d.innerText = `${i+1}. ${t.title}`;
-                        d.onclick = () => { app.play(i); app.ui.toggleDrawer(false); };
+                        d.onclick = () => { app.play(i); app.ui.toggleDrawer('menu', false); };
                         l.appendChild(d);
                     });
+                    // Auto-open list on search
+                    app.ui.toggleDrawer('menu', true); 
                 }
             },
 
             loadGenres() {
                 const genres = {
-                    "🎸 Rock Hits": "rock hits",
-                    "🎤 Hip-Hop": "hip hop hits",
-                    "🕺 Pop 2024": "pop hits 2024",
+                    "🎸 Rock 80s": "80s rock hits",
+                    "🎤 Hip-Hop 90s": "90s hip hop",
                     "🏎 Phonk": "phonk drift",
-                    "💤 Chill": "lofi hip hop"
+                    "💤 Chill / Lofi": "lofi hip hop",
+                    "💃 Pop 2024": "top pop hits 2024"
                 };
                 const l = document.getElementById('list');
                 for(let [k,v] of Object.entries(genres)) {
                     let d = document.createElement('div');
                     d.className = 'item';
                     d.innerText = k;
-                    d.onclick = () => { app.search(v); app.ui.toggleDrawer(false); };
+                    d.onclick = () => { app.search(v); app.ui.toggleDrawer('menu', false); };
                     l.appendChild(d);
                 }
             }
