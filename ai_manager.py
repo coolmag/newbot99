@@ -11,13 +11,13 @@ settings = get_settings()
 
 class AIManager:
     """
-    🧠 AI Manager (Gemma 3 Edition).
-    Strictly uses user-provided model list:
-    - gemma-3-12b (Primary)
-    - gemma-3-4b (Fast Fallback)
-    - gemma-3-27b (Smart Fallback)
+    🧠 AI Manager (v2.5 Stable Edition).
+    Uses a robust model rotation strategy based on current Google AI documentation:
+    - gemma-2-9b-it (Primary, known stable)
+    - gemini-2.5-flash (Secondary, current fast model)
     """
-    
+    AVAILABLE_MODELS = ("gemma-2-9b-it", "gemini-2.5-flash")
+
     def __init__(self):
         self.client = None
         self.is_active = False
@@ -30,7 +30,7 @@ class AIManager:
                     http_options={'api_version': 'v1beta'}
                 )
                 self.is_active = True
-                logger.info("✅ AI Ready (Gemma 3 Family).")
+                logger.info(f"✅ AI Ready (Stable Edition: {', '.join(self.AVAILABLE_MODELS)}).")
             except Exception as e:
                 logger.error(f"❌ Init Error: {e}")
 
@@ -38,8 +38,7 @@ class AIManager:
         """Классификация намерения"""
         if not self.is_active: return self._regex_fallback(text)
         
-        # Строгий список из вашего промпта
-        models = ["gemma-3-12b", "gemma-3-4b", "gemma-3-27b"]
+        models = self.AVAILABLE_MODELS
         
         prompt = f"""
         Act as a music bot classifier.
@@ -70,8 +69,8 @@ class AIManager:
         """Болталка"""
         if not self.is_active: return "..."
         
-        # Для чата 12b оптимальна, 27b умнее
-        models = ["gemma-3-12b", "gemma-3-27b", "gemma-3-4b"]
+        # Используем стабильный список моделей
+        models = self.AVAILABLE_MODELS
         
         full_prompt = f"{system_prompt}\nUser ({user}): {text}\nResponse:"
         
