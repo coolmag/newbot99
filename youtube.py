@@ -11,6 +11,7 @@ from cache_service import CacheService
 
 logger = logging.getLogger(__name__)
 
+# Глушилка логов
 class QuietLogger:
     def debug(self, msg): pass
     def warning(self, msg): pass
@@ -32,48 +33,54 @@ class YouTubeDownloader:
         logger.info(f"🔎 Search: {query}")
         
         loop = asyncio.get_running_loop()
+        
+        # 1. Попытка: Ищем Видео (Full versions)
         try:
-            # 🔥 ИЗМЕНЕНИЕ: Ищем 'videos', а не 'songs', чтобы избежать 30-сек превью
-            search_results = await loop.run_in_executor(None, lambda: self.ytmusic.search(query, filter="videos", limit=limit))
-            
-            results = []
-            for item in search_results:
-                video_id = item.get('videoId')
-                if not video_id: continue
-                
-                artists = ", ".join([a['name'] for a in item.get('artists', [])])
-                title = item.get('title')
-                
-                # Парсинг длительности
-                duration = 0
-                try:
-                    parts = item.get('duration', '0:00').split(':')
-                    if len(parts) == 2:
-                        duration = int(parts[0]) * 60 + int(parts[1])
-                    elif len(parts) == 3: # Часы:мин:сек
-                        duration = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
-                    else:
-                        duration = int(parts[0])
-                except: pass
-                
-                # 🔥 ФИЛЬТР: Только треки от 40 сек до 15 мин
-                if duration < 40 or duration > 900: 
-                    continue
+            results = await self._search_internal(query, "videos", limit, loop)
+            if results: return results
+        except: pass
 
-                track = TrackInfo(
-                    identifier=video_id,
-                    title=title,
-                    uploader=artists,
-                    duration=duration,
-                    thumbnail_url=item.get('thumbnails', [{}])[-1].get('url'),
-                    source="ytmusic"
-                )
-                results.append(track)
-            
-            return results
+        # 2. Попытка: Ищем Песни (Audio versions) - если видео не подошли
+        logger.info(f"🔎 Fallback search (Songs): {query}")
+        try:
+            return await self._search_internal(query, "songs", limit, loop)
         except Exception as e:
             logger.error(f"Search error: {e}")
             return []
+
+    async def _search_internal(self, query, filter_type, limit, loop):
+        """Внутренняя логика поиска и фильтрации"""
+        search_results = await loop.run_in_executor(None, lambda: self.ytmusic.search(query, filter=filter_type, limit=limit))
+        valid_tracks = []
+        
+        for item in search_results:
+            video_id = item.get('videoId')
+            if not video_id: continue
+            
+            artists = ", ".join([a['name'] for a in item.get('artists', [])])
+            title = item.get('title')
+            
+            duration = 0
+            try:
+                parts = item.get('duration', '0:00').split(':')
+                if len(parts) == 2:
+                    duration = int(parts[0]) * 60 + int(parts[1])
+                elif len(parts) == 3:
+                    duration = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+            except: pass
+            
+            # Фильтр: от 40 сек до 20 минут (чуть расширил)
+            if duration < 40 or duration > 1200: 
+                continue
+
+            track = TrackInfo(
+                identifier=video_id, title=title, uploader=artists,
+                duration=duration, thumbnail_url=item.get('thumbnails', [{}])[-1].get('url'),
+                source="ytmusic"
+            )
+            valid_tracks.append(track)
+            
+        return valid_tracks
 
     async def get_track_info(self, video_id: str) -> Optional[TrackInfo]:
         try:
@@ -99,7 +106,6 @@ class YouTubeDownloader:
             track_info = await self.get_track_info(video_id)
 
         async with self.semaphore:
-            # Для SoundCloud поиск лучше делать "Artist - Title"
             query = f"{track_info.uploader} - {track_info.title}" if track_info else video_id
             logger.info(f"☁️ Downloading: {query}")
             return await self._download_sc(query, final_path, track_info)
