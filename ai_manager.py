@@ -5,7 +5,7 @@ import re
 from typing import Optional, Dict
 
 # ИЗМЕНЕНО: Правильный импорт
-import google.generativeai as genai
+from google import genai
 from google.generativeai.types import GenerationConfig
 
 from config import get_settings
