@@ -2,11 +2,10 @@ import logging
 import json
 import asyncio
 import re
+import google.generativeai as genai
 from typing import Optional, Dict
 
-# ИЗМЕНЕНО: Правильный импорт
-from google import genai
-from google.generativeai import GenerationConfig
+
 
 from config import get_settings
 
