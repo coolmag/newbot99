@@ -1,4 +1,10 @@
 import logging
+import google.generativeai as genai
+try:
+    from google.generativeai.types import GenerationConfig
+except ImportError:
+    GenerationConfig = genai.GenerationConfig
+
 from ai_manager import AIManager # Теперь это класс
 
 logger = logging.getLogger("nlp")
