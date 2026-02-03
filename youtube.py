@@ -120,6 +120,7 @@ class YouTubeDownloader:
             'format': 'bestaudio/best',
             'outtmpl': temp_path,
             'quiet': True,
+            'noprogress': True,
             'noplaylist': True,
             'postprocessors': [{'key': 'FFmpegExtractAudio','preferredcodec': 'mp3'}],
         }
