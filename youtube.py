@@ -28,46 +28,54 @@ class YouTubeDownloader:
         self.ytmusic = YTMusic() 
 
     async def search(self, query: str, limit: int = 10, **kwargs) -> List[TrackInfo]:
-        if kwargs.get('decade'):
-            query = f"{query} {kwargs['decade']}"
+        if kwargs.get('decade'): query = f"{query} {kwargs['decade']}"
         if not query or not query.strip(): return []
-            
+
         logger.info(f"🔎 YTMusic Search: {query}")
-        
         loop = asyncio.get_running_loop()
+
         try:
+            # Ищем "songs", чтобы было меньше мусора
             search_results = await loop.run_in_executor(None, lambda: self.ytmusic.search(query, filter="songs", limit=limit))
             
             results = []
             for item in search_results:
                 video_id = item.get('videoId')
                 if not video_id: continue
-                
+
                 artists = ", ".join([a['name'] for a in item.get('artists', [])])
-                title = item.get('title')
                 
+                # --- ИСПРАВЛЕННЫЙ БЛОК ВРЕМЕНИ ---
                 duration = 0
                 try:
                     parts = item.get('duration', '0:00').split(':')
-                    if len(parts) == 2:
+                    if len(parts) == 3: # Часы:Минуты:Секунды (например 2:00:00)
+                        duration = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+                    elif len(parts) == 2: # Минуты:Секунды
                         duration = int(parts[0]) * 60 + int(parts[1])
                     else:
                         duration = int(parts[0])
-                except: pass
+                except: 
+                    pass
                 
-                if duration > 900: continue 
+                # Жесткий лимит 720 секунд (12 минут). 
+                # Все, что длиннее - в топку, Телеграм не пропустит.
+                if duration > 720 or duration == 0: 
+                    continue
+                # ---------------------------------
 
                 track = TrackInfo(
-                    identifier=video_id,
-                    title=title,
-                    uploader=artists,
-                    duration=duration,
-                    thumbnail_url=item.get('thumbnails', [{}])[-1].get('url'),
+                    identifier=video_id, 
+                    title=item.get('title'), 
+                    uploader=artists, 
+                    duration=duration, 
+                    thumbnail_url=item.get('thumbnails', [{}])[-1].get('url'), 
                     source="ytmusic"
                 )
                 results.append(track)
-            
+
             return results
+
         except Exception as e:
             logger.error(f"Search error: {e}")
             return []
