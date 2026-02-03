@@ -6,7 +6,7 @@ from typing import Optional, Dict
 
 # ИЗМЕНЕНО: Правильный импорт
 from google import genai
-from google.generativeai.types import GenerationConfig
+from google.generativeai import GenerationConfig
 
 from config import get_settings
 
