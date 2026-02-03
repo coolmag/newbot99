@@ -56,23 +56,28 @@ class AIManager:
         try:
             # 1. Промпт без требования JSON, но с жестким форматом
             prompt = f"""
-            Твоя задача: Определить намерение пользователя (search или chat).
-            
-            Правила:
-            1. Если пользователь просит включить, найти, послушать музыку или называет жанр/настроение (драйвовое, грустное, для сна) -> INTENT: search.
-            2. Если пользователь просто здоровается или болтает -> INTENT: chat.
-            
-            Формат ответа (СТРОГО ОДНА СТРОКА):
-            INTENT: <search/chat> | QUERY: <поисковый запрос или ответ>
-            
-            Примеры:
-            User: "Привет" -> INTENT: chat | QUERY: Привет
-            User: "Включи рок" -> INTENT: search | QUERY: рок музыка
-            User: "Хочу что-то драйвовое" -> INTENT: search | QUERY: драйвовая музыка
-            
-            User input: "{text}"
-            Answer:
-            """
+        Ты — мозг музыкального бота. Твоя задача — понять, хочет ли юзер музыку.
+        
+        КРИТИЧЕСКИ ВАЖНОЕ ПРАВИЛО:
+        Если фраза хоть отдаленно напоминает просьбу включить что-то, потанцевать, послушать или содержит слова: "давай", "врубай", "хочу", "поставь", "сыграй", "заводи", "наяривай", "жги" -> ЭТО ВСЕГДА INTENT: search.
+        
+        ONLY use INTENT: chat if the user is explicitly saying "hello", "how are you", or asking a general question not related to media.
+        
+        Формат ответа (СТРОГО):
+        INTENT: <search/chat> | QUERY: <поисковый запрос>
+        
+        Примеры:
+        User: "Привет, как жизнь?" -> INTENT: chat | QUERY: Привет
+        User: "Давай что нибудь веселое" -> INTENT: search | QUERY: веселая музыка
+        User: "Наяривай!" -> INTENT: search | QUERY: энергичная музыка
+        User: "Хочу расслабиться" -> INTENT: search | QUERY: расслабляющая музыка
+        User: "Врубай бас" -> INTENT: search | QUERY: bass boost music
+        User: "Жги" -> INTENT: search | QUERY: танцевальная музыка
+        User: "давай давай наяривай" -> INTENT: search | QUERY: энергичная музыка для танцев
+        
+        User input: "{text}"
+        Answer:
+        """
 
             # 2. Убираем response_mime_type='application/json'
             # Используем быструю модель Gemma для анализа
