@@ -49,46 +49,66 @@ class AIManager:
             logger.warning("⚠️ GOOGLE_API_KEY is missing!")
 
     async def analyze_message(self, text: str) -> Dict:
+        if not self.is_active:
+            logger.warning("[NLP] AI is not active, using regex fallback.")
+            return self._regex_fallback(text)
+            
         try:
-            # Супер-агрессивный промпт v3
+            # Промпт v4: Разделение на Search (Трек) и Radio (Поток)
             prompt = f"""
-            Ты — мозг музыкального бота. Твоя задача — жестко определять, хочет ли юзер музыку.
+            Ты — мозг музыкального бота. Твоя задача — классифицировать запрос юзера.
             
-            ПРАВИЛА:
-            1. Если юзер просит "включи", "поставь", "хочу", "давай" -> INTENT: search.
+            ДОСТУПНЫЕ ИНТЕНТЫ:
+            1. INTENT: search
+               Использовать ТОЛЬКО если юзер называет КОНКРЕТНОГО исполнителя или название песни.
+               Пример: "Включи Linkin Park", "Поставь Numb", "Скриптонит", "Eminem".
+               
+            2. INTENT: radio
+               Использовать, если юзер просит:
+               - Жанр (рок, поп, рэп, джаз)
+               - Настроение (веселое, грустное, для сна, драйвовое, расслабиться)
+               - Подборку ("хиты", "новинки", "топ чарт", "русские хиты")
+               - Абстрактное ("включи что-то", "хочу музыки", "волну", "посоветуй", "наяривай")
+               
+            3. INTENT: chat
+               Только для "Привет", "Как дела", "Кто ты" и болтовни не о музыке.
             
-            2. (ВАЖНО) Если юзер СПРАШИВАЕТ "Что послушать?", "Что включишь?", "Посоветуй что-то" -> ЭТО ТОЖЕ INTENT: search!
-               В этом случае в QUERY ты должна сама придумать крутой поисковый запрос (жанр, настроение, новинки). НЕ возвращай вопрос юзера в query!
-            
-            3. INTENT: chat — только для "Привет", "Как дела", "Кто ты".
+            ФОРМАТ ОТВЕТА (Строго одна строка):
+            INTENT: <intent> | QUERY: <поисковый запрос>
             
             Примеры:
-            User: "Включи рок" -> INTENT: search | QUERY: рок музыка
-            User: "давай наяривай" -> INTENT: search | QUERY: энергичная танцевальная музыка
-            User: "Что будем слушать?" -> INTENT: search | QUERY: популярные хиты новинки
-            User: "Посоветуй трек" -> INTENT: search | QUERY: крутая музыка подборка
-            User: "Как настроение?" -> INTENT: chat | QUERY: Как настроение?
+            User: "Привет" -> INTENT: chat | QUERY: Привет
+            User: "Linkin Park Numb" -> INTENT: search | QUERY: Linkin Park Numb
+            User: "Включи трек Федерико Феллини" -> INTENT: search | QUERY: Galibri & Mavik Федерико Феллини
+            
+            User: "Хочу что-то веселое" -> INTENT: radio | QUERY: веселая танцевальная музыка
+            User: "Врубай рок" -> INTENT: radio | QUERY: best rock music mix
+            User: "Русские хиты" -> INTENT: radio | QUERY: русские хиты новинки
+            User: "Включи волну попсы" -> INTENT: radio | QUERY: pop music hits
+            User: "Для сна" -> INTENT: radio | QUERY: ambient sleep music
             
             User input: "{text}"
             Answer:
             """
 
-            model = genai.GenerativeModel("gemma-3-4b-it")
-            response = await model.generate_content_async(
+            # Используем основную модель класса
+            response = await self.model.generate_content_async(
                 prompt,
-                generation_config=genai.GenerationConfig(
-                    temperature=0.3 # Чуть больше креатива, чтобы придумывала запросы
-                )
+                generation_config=genai.GenerationConfig(temperature=0.1)
             )
             
             raw_text = response.text.strip()
             logger.info(f"[NLP] Raw AI response: {raw_text}")
 
+            # Парсинг
             intent = "chat"
             query = text
 
-            if "INTENT: search" in raw_text:
-                intent = "search"
+            if "INTENT:" in raw_text:
+                if "INTENT: search" in raw_text: intent = "search"
+                elif "INTENT: radio" in raw_text: intent = "radio"
+                elif "INTENT: chat" in raw_text: intent = "chat"
+                
                 if "| QUERY:" in raw_text:
                     query = raw_text.split("| QUERY:")[1].strip()
             
