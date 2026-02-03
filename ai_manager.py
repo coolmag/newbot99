@@ -49,35 +49,59 @@ class AIManager:
             logger.warning("⚠️ GOOGLE_API_KEY is missing!")
 
     async def analyze_message(self, text: str) -> Dict:
-        if not self.is_active: return self._regex_fallback(text)
-
-        prompt = f"""
-        Act as a JSON API. Task: Analyze user request for a music bot. Input: "{text}"
-        Output Schema: {{ "intent": "radio" | "search" | "chat", "query": "string or null" }}
-        Rules:
-        - "radio": if user asks to play a genre, mood, mix, or flow.
-        - "search": if user asks for a specific song/artist.
-        - "chat": if user says hello, asks how are you, or talks off-topic.
-        Response (JSON only):
         """
-        
-        # Используем gemma-3-4b-it для скорости и экономии
-        model = genai.GenerativeModel("gemma-3-4b-it")
-        generation_config = GenerationConfig(response_mime_type="application/json")
-        
+        Анализирует сообщение, требуя от AI простой текстовый формат вместо JSON.
+        Формат ответа AI: "INTENT: search | QUERY: запрос"
+        """
         try:
-            response = await model.generate_content_async(
-                contents=prompt,
-                generation_config=generation_config
-            )
-            data = self._parse_json(response.text)
-            if data and data.get("intent"):
-                logger.info(f"🤖 AI (gemma-3-4b-it): {data}")
-                return data
-        except Exception as e:
-            logger.warning(f"⚠️ NLP model error: {e}. Trying regex fallback...")
+            # 1. Промпт без требования JSON, но с жестким форматом
+            prompt = f"""
+            Твоя задача: Определить намерение пользователя (search или chat).
+            
+            Правила:
+            1. Если пользователь просит включить, найти, послушать музыку или называет жанр/настроение (драйвовое, грустное, для сна) -> INTENT: search.
+            2. Если пользователь просто здоровается или болтает -> INTENT: chat.
+            
+            Формат ответа (СТРОГО ОДНА СТРОКА):
+            INTENT: <search/chat> | QUERY: <поисковый запрос или ответ>
+            
+            Примеры:
+            User: "Привет" -> INTENT: chat | QUERY: Привет
+            User: "Включи рок" -> INTENT: search | QUERY: рок музыка
+            User: "Хочу что-то драйвовое" -> INTENT: search | QUERY: драйвовая музыка
+            
+            User input: "{text}"
+            Answer:
+            """
 
-        return self._regex_fallback(text)
+            # 2. Убираем response_mime_type='application/json'
+            # Используем быструю модель Gemma для анализа
+            model = genai.GenerativeModel("gemma-3-4b-it")
+            response = await model.generate_content_async(
+                prompt,
+                generation_config=genai.GenerationConfig(
+                    temperature=0.0 # Минимум креатива, нужна точность
+                )
+            )
+            
+            raw_text = response.text.strip()
+            logger.info(f"[NLP] Raw AI response: {raw_text}")
+
+            # 3. Ручной парсинг ответа (вместо json.loads)
+            intent = "chat"
+            query = text
+
+            if "INTENT: search" in raw_text:
+                intent = "search"
+                # Вытаскиваем то, что после QUERY:
+                if "| QUERY:" in raw_text:
+                    query = raw_text.split("| QUERY:")[1].strip()
+            
+            return {"intent": intent, "query": query}
+
+        except Exception as e:
+            logger.warning(f"[NLP] Error: {e}, falling back to regex.")
+            return self._regex_fallback(text)
 
     async def get_chat_response(self, user_text: str, system_prompt: str = "") -> str:
         if not self.is_active: return "Мозг отключен 🔌"
