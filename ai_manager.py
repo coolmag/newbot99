@@ -49,63 +49,53 @@ class AIManager:
             logger.warning("⚠️ GOOGLE_API_KEY is missing!")
 
     async def analyze_message(self, text: str) -> Dict:
-        """
-        Анализирует сообщение, требуя от AI простой текстовый формат вместо JSON.
-        Формат ответа AI: "INTENT: search | QUERY: запрос"
-        """
         try:
-            # 1. Промпт без требования JSON, но с жестким форматом
+            # Супер-агрессивный промпт v3
             prompt = f"""
-        Ты — мозг музыкального бота. Твоя задача — понять, хочет ли юзер музыку.
-        
-        КРИТИЧЕСКИ ВАЖНОЕ ПРАВИЛО:
-        Если фраза хоть отдаленно напоминает просьбу включить что-то, потанцевать, послушать или содержит слова: "давай", "врубай", "хочу", "поставь", "сыграй", "заводи", "наяривай", "жги" -> ЭТО ВСЕГДА INTENT: search.
-        
-        ONLY use INTENT: chat if the user is explicitly saying "hello", "how are you", or asking a general question not related to media.
-        
-        Формат ответа (СТРОГО):
-        INTENT: <search/chat> | QUERY: <поисковый запрос>
-        
-        Примеры:
-        User: "Привет, как жизнь?" -> INTENT: chat | QUERY: Привет
-        User: "Давай что нибудь веселое" -> INTENT: search | QUERY: веселая музыка
-        User: "Наяривай!" -> INTENT: search | QUERY: энергичная музыка
-        User: "Хочу расслабиться" -> INTENT: search | QUERY: расслабляющая музыка
-        User: "Врубай бас" -> INTENT: search | QUERY: bass boost music
-        User: "Жги" -> INTENT: search | QUERY: танцевальная музыка
-        User: "давай давай наяривай" -> INTENT: search | QUERY: энергичная музыка для танцев
-        
-        User input: "{text}"
-        Answer:
-        """
+            Ты — мозг музыкального бота. Твоя задача — жестко определять, хочет ли юзер музыку.
+            
+            ПРАВИЛА:
+            1. Если юзер просит "включи", "поставь", "хочу", "давай" -> INTENT: search.
+            
+            2. (ВАЖНО) Если юзер СПРАШИВАЕТ "Что послушать?", "Что включишь?", "Посоветуй что-то" -> ЭТО ТОЖЕ INTENT: search!
+               В этом случае в QUERY ты должна сама придумать крутой поисковый запрос (жанр, настроение, новинки). НЕ возвращай вопрос юзера в query!
+            
+            3. INTENT: chat — только для "Привет", "Как дела", "Кто ты".
+            
+            Примеры:
+            User: "Включи рок" -> INTENT: search | QUERY: рок музыка
+            User: "давай наяривай" -> INTENT: search | QUERY: энергичная танцевальная музыка
+            User: "Что будем слушать?" -> INTENT: search | QUERY: популярные хиты новинки
+            User: "Посоветуй трек" -> INTENT: search | QUERY: крутая музыка подборка
+            User: "Как настроение?" -> INTENT: chat | QUERY: Как настроение?
+            
+            User input: "{text}"
+            Answer:
+            """
 
-            # 2. Убираем response_mime_type='application/json'
-            # Используем быструю модель Gemma для анализа
             model = genai.GenerativeModel("gemma-3-4b-it")
             response = await model.generate_content_async(
                 prompt,
                 generation_config=genai.GenerationConfig(
-                    temperature=0.0 # Минимум креатива, нужна точность
+                    temperature=0.3 # Чуть больше креатива, чтобы придумывала запросы
                 )
             )
             
             raw_text = response.text.strip()
             logger.info(f"[NLP] Raw AI response: {raw_text}")
 
-            # 3. Ручной парсинг ответа (вместо json.loads)
             intent = "chat"
             query = text
 
             if "INTENT: search" in raw_text:
                 intent = "search"
-                # Вытаскиваем то, что после QUERY:
                 if "| QUERY:" in raw_text:
                     query = raw_text.split("| QUERY:")[1].strip()
             
             return {"intent": intent, "query": query}
 
         except Exception as e:
-            logger.warning(f"[NLP] Error: {e}, falling back to regex.")
+            logger.warning(f"[NLP] Error: {e}, using regex fallback.")
             return self._regex_fallback(text)
 
     async def get_chat_response(self, user_text: str, system_prompt: str = "") -> str:
