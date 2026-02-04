@@ -1,0 +1,6 @@
+/* This is a dummy file to prevent 404 errors from an old, cached index.html. */
+/* The real styles are embedded in the correct index.html file. */
+/* If you see this, your deployment is not serving the latest files. */
+body {
+    background-color: #ff0000 !important; /* Red background to indicate an error */
+}

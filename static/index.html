@@ -3,58 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aurora Deck</title>
+    <title>Aurora Player 1996</title>
     <style>
-        :root { --bg: #121212; --deck: #1e1e1e; --accent: #00f0ff; --pink: #ff0055; --text: #eee; }
+        :root { --bg: silver; --text: black; --accent: #0000FF; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; user-select: none; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'MS Sans Serif', 'Arial', 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; user-select: none; }
         
         /* DECK */
-        .deck-container { margin-top: 20px; position: relative; width: 340px; height: 220px; background: var(--deck); border-radius: 12px; box-shadow: inset 0 0 20px #000, 0 10px 30px rgba(0,0,0,0.5); border: 2px solid #333; display: flex; flex-direction: column; align-items: center; padding: 15px; }
-        .screw { position: absolute; width: 10px; height: 10px; background: #444; border-radius: 50%; box-shadow: inset 1px 1px 2px #000; }
+        .deck-container { margin-top: 20px; position: relative; width: 340px; height: 220px; background: var(--bg); border: 2px solid; border-color: #dfdfdf #808080 #808080 #dfdfdf; border-style: solid; display: flex; flex-direction: column; align-items: center; padding: 15px; }
+        .screw { position: absolute; width: 8px; height: 8px; background: #808080; border: 1px inset #555; }
         .tl { top: 8px; left: 8px; } .tr { top: 8px; right: 8px; } .bl { bottom: 8px; left: 8px; } .br { bottom: 8px; right: 8px; }
         
         /* LABEL */
-        .label { width: 100%; height: 130px; background: #ccc; border-radius: 4px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; color: #111; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-        .label-top { width: 100%; height: 15px; background: linear-gradient(90deg, var(--pink), #ffcc00, var(--accent)); opacity: 0.8; }
-        .track-info { margin-top: 5px; text-align: center; width: 90%; z-index: 2; }
-        .title { font-weight: 900; font-size: 14px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .artist { font-size: 11px; font-weight: bold; color: #444; }
+        .label { width: 100%; height: 130px; background: #fdfdf0; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; color: #111; border: 1px solid #808080; }
+        .label-top { width: 100%; height: 5px; background: #008080; }
+        .track-info { margin-top: 10px; text-align: center; width: 90%; z-index: 2; }
+        .title { font-weight: bold; font-size: 14px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .artist { font-size: 11px; color: #333; }
         
         /* TAPE WINDOW */
-        .window { width: 200px; height: 50px; background: rgba(0,0,0,0.8); border-radius: 25px; margin-top: 10px; border: 2px solid #888; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; position: relative; }
-        .spool { width: 36px; height: 36px; background: #fff; border-radius: 50%; border: 6px solid #333; position: relative; }
-        .spool::after { content: ''; position: absolute; inset: 0; background: conic-gradient(transparent 20%, #999 20% 40%, transparent 40% 60%, #999 60% 80%, transparent 80%); border-radius: 50%; animation: spin 2s linear infinite; animation-play-state: paused; }
+        .window { width: 220px; height: 50px; background: #333; margin-top: 15px; border: 2px inset #555; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; position: relative; }
+        .spool { width: 36px; height: 36px; background: #fff; border: 6px solid #1a1a1a; position: relative; border-radius: 50%; }
+        .spool::after { content: ''; position: absolute; inset: 0; background: conic-gradient(transparent 20%, #888 20% 40%, transparent 40% 60%, #888 60% 80%, transparent 80%); border-radius: 50%; animation: spin 2s linear infinite; animation-play-state: paused; }
         .playing .spool::after { animation-play-state: running; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         
         /* CONTROLS */
-        .controls { margin-top: 30px; display: flex; gap: 15px; }
-        .btn { width: 60px; height: 60px; background: #222; border: 1px solid #444; border-radius: 50%; color: #888; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 10px rgba(0,0,0,0.3); transition: 0.1s; }
-        .btn:active { transform: translateY(2px); box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-        .play-btn { color: var(--accent); border-color: var(--accent); }
-        .playing .play-btn { color: var(--pink); border-color: var(--pink); text-shadow: 0 0 10px var(--pink); }
+        .controls { margin-top: 30px; display: flex; gap: 10px; }
+        .btn { width: 70px; height: 50px; background: var(--bg); border: 2px outset; border-color: #dfdfdf #808080 #808080 #dfdfdf; color: var(--text); font-size: 20px; cursor: pointer; font-weight: bold; }
+        .btn:active { border-style: inset; }
+        .play-btn { color: var(--accent); }
+        .playing .play-btn { color: #FF0000; border-color: #808080 #dfdfdf #dfdfdf #808080; border-style: inset; }
         
-        /* AI & MENU BTNS */
-        .extra-btns { margin-top: 20px; display: flex; gap: 10px; }
-        .small-btn { padding: 10px 20px; background: #222; border: 1px solid #444; color: #ccc; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        /* DRAWER & SEARCH */
+        .search-container { margin-top: 25px; width: 300px; }
+        input { width: 100%; background: white; border: 2px inset #808080; padding: 10px; color: var(--text); font-family: inherit; text-align: center; outline: none; }
         
-        /* SEARCH */
-        .search-container { margin-top: 15px; width: 300px; }
-        input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--accent); font-family: inherit; text-align: center; border-radius: 8px; outline: none; }
-        
-        /* DRAWERS (MENU & AI) */
-        .drawer, .ai-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; flex-direction: column; transform: translateY(100%); transition: 0.3s; padding: 20px; }
-        .drawer.open, .ai-modal.open { transform: translateY(0); }
-        
-        .ai-modal { justify-content: center; align-items: center; }
-        .ai-modal input { margin-bottom: 20px; width: 80%; max-width: 400px; }
-        
-        .drawer-header { text-align: center; color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 20px; }
-        .drawer-list { flex: 1; overflow-y: auto; width: 100%; }
-        .item { padding: 15px; border-bottom: 1px solid #333; cursor: pointer; color: #aaa; }
-        .item:hover { color: #fff; background: #1a1a1a; }
-        .close-btn { margin-top: 10px; padding: 15px; background: #333; color: #fff; border: none; width: 100%; border-radius: 8px; cursor: pointer; }
+        .drawer-btn { margin-top: 15px; padding: 8px 15px; background: var(--bg); border: 2px outset; border-color: #dfdfdf #808080 #808080 #dfdfdf; color: var(--text); font-size: 12px; cursor: pointer; }
+        .drawer-btn:active { border-style: inset; }
+
+        /* DRAWER OVERLAY */
+        .drawer { position: fixed; inset: 0; background: var(--bg); border: 2px outset; border-color: #dfdfdf #808080 #808080 #dfdfdf; z-index: 100; display: flex; flex-direction: column; transform: translateY(100%); transition: 0.3s ease-out; padding: 10px; }
+        .drawer.open { transform: translateY(0); }
+        .drawer-header { text-align: center; color: var(--text); font-size: 16px; font-weight: bold; margin-bottom: 10px; padding: 5px; background: navy; color: white; }
+        .drawer-list { flex: 1; overflow-y: auto; background: white; border: 2px inset #808080; padding: 5px; }
+        .item { padding: 10px; border-bottom: 1px solid #ccc; cursor: pointer; color: #333; }
+        .item:hover { color: white; background: var(--accent); }
+        .close-btn { margin-top: 10px; padding: 10px; background: var(--bg); color: var(--text); border: 2px outset; border-color: #dfdfdf #808080 #808080 #dfdfdf; width: 100%; cursor: pointer; }
+        .close-btn:active { border-style: inset; }
     </style>
 </head>
 <body>
@@ -67,7 +63,10 @@
                 <div class="title" id="title">AURORA SYSTEM</div>
                 <div class="artist" id="artist">INSERT TAPE</div>
             </div>
-            <div class="window"><div class="spool"></div><div class="spool"></div></div>
+            <div class="window">
+                <div class="spool"></div>
+                <div class="spool"></div>
+            </div>
         </div>
     </div>
 
@@ -77,136 +76,154 @@
         <button class="btn" onclick="app.next()">⏭</button>
     </div>
 
-    <div class="extra-btns">
-        <button class="small-btn" onclick="app.ui.toggleDrawer('menu', true)">☰ MENU</button>
-        <button class="small-btn" onclick="app.ui.toggleDrawer('ai', true)">🤖 AI DJ</button>
-    </div>
-
     <div class="search-container">
-        <input type="text" id="search" placeholder="SEARCH TAPE..." onchange="app.search(this.value)">
-    </div>
-    
-    <!-- MENU DRAWER -->
-    <div class="drawer" id="menuDrawer">
-        <div class="drawer-header">GENRES</div>
-        <div class="drawer-list" id="list"></div>
-        <button class="close-btn" onclick="app.ui.toggleDrawer('menu', false)">CLOSE</button>
-    </div>
-
-    <!-- AI MODAL -->
-    <div class="ai-modal" id="aiModal">
-        <h2 style="color:var(--accent)">AI GENERATOR</h2>
-        <input type="text" id="aiPrompt" placeholder="Mood, Genre, Activity...">
-        <div style="display:flex; gap:10px; width:80%; max-width:400px">
-            <button class="close-btn" style="background:var(--pink)" onclick="app.askAI()">GENERATE</button>
-            <button class="close-btn" onclick="app.ui.toggleDrawer('ai', false)">CANCEL</button>
+            <input type="text" id="search" placeholder="SEARCH or ! for AI..." onchange="app.search(this.value)">
         </div>
-    </div>
-
-    <script>
-        const app = {
-            state: { p: [], i: 0 },
-            audio: new Audio(),
-            
-            init() {
-                this.audio.onended = () => this.next();
-                this.audio.onplay = () => this.ui.setPlay(true);
-                this.audio.onpause = () => this.ui.setPlay(false);
-                this.loadGenres();
-            },
-
-            async search(q) {
-                if(!q) return;
-                this.ui.setTitle("SEARCHING...", "");
-                try {
-                    const res = await fetch(`/api/player/playlist?query=${encodeURIComponent(q)}`);
-                    const data = await res.json();
-                    this.handleData(data);
-                } catch(e) { this.ui.setTitle("ERROR", "NET"); }
-            },
-
-            async askAI() {
-                const p = document.getElementById('aiPrompt').value;
-                if(!p) return;
-                this.ui.toggleDrawer('ai', false);
-                this.ui.setTitle("AI THINKING...", "PLEASE WAIT");
-                try {
-                    const res = await fetch(`/api/ai/dj?prompt=${encodeURIComponent(p)}`);
-                    const data = await res.json();
-                    this.handleData(data);
-                } catch(e) { this.ui.setTitle("AI ERROR", "OFFLINE"); }
-            },
-
-            handleData(data) {
-                if(data.playlist?.length) {
-                    this.state.p = data.playlist;
-                    this.play(0);
-                    this.ui.renderPlaylist();
-                } else {
-                    this.ui.setTitle("NOT FOUND", "TRY AGAIN");
-                }
-            },
-
-            play(i) {
-                if(!this.state.p[i]) return;
-                this.state.i = i;
-                const t = this.state.p[i];
-                this.ui.setTitle(t.title, t.artist);
-                this.audio.src = `/stream/${t.identifier}`;
-                this.audio.play();
-            },
-
-            toggle() { this.audio.paused ? this.audio.play() : this.audio.pause(); },
-            next() { this.play((this.state.i + 1) % this.state.p.length); },
-            prev() { this.play((this.state.i - 1 + this.state.p.length) % this.state.p.length); },
-
-            ui: {
-                setPlay(s) {
-                    document.getElementById('deck').classList.toggle('playing', s);
-                    document.getElementById('playBtn').innerText = s ? '⏸' : '▶';
+        
+        <button class="drawer-btn" onclick="app.ui.toggleDrawer(true)">☰ OPEN MENU</button>
+    
+        <div class="drawer" id="drawer">
+            <div class="drawer-header">GENRES & PLAYLIST</div>
+            <div class="drawer-list" id="list"></div>
+            <button class="close-btn" onclick="app.ui.toggleDrawer(false)">CLOSE</button>
+        </div>
+    
+        <script>
+            const app = {
+                state: { p: [], i: 0 },
+                audio: new Audio(),
+                voices: [],
+                
+                init() {
+                    this.audio.onended = () => this.next();
+                    this.audio.onplay = () => this.ui.setPlay(true);
+                    this.audio.onpause = () => this.ui.setPlay(false);
+                    this.loadGenres();
+                    // Загружаем голоса для синтеза речи
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        this.voices = window.speechSynthesis.getVoices();
+                    };
                 },
-                setTitle(t, a) {
-                    document.getElementById('title').innerText = t;
-                    document.getElementById('artist').innerText = a;
+    
+                search(q) {
+                    if(!q) return;
+                    // Если запрос начинается с "!", это команда для AI
+                    if (q.startsWith('!')) {
+                        this.askAI(q.substring(1).trim());
+                    } else {
+                        this.searchPlaylist(q);
+                    }
                 },
-                toggleDrawer(type, s) {
-                    const id = type === 'menu' ? 'menuDrawer' : 'aiModal';
-                    document.getElementById(id).classList.toggle('open', s);
+                
+                async searchPlaylist(q) {
+                    document.getElementById('title').innerText = "SEARCHING...";
+                    document.getElementById('artist').innerText = "PLAYLIST";
+                    try {
+                        const res = await fetch(`/api/player/playlist?query=${encodeURIComponent(q)}`);
+                        const data = await res.json();
+                        if(data.playlist?.length) {
+                            this.state.p = data.playlist;
+                            this.play(0);
+                            this.ui.renderPlaylist();
+                        } else {
+                            document.getElementById('title').innerText = "NOT FOUND";
+                        }
+                    } catch(e) { 
+                        console.error(e);
+                        document.getElementById('title').innerText = "ERROR"; 
+                    }
                 },
-                renderPlaylist() {
+    
+                async askAI(q) {
+                    document.getElementById('title').innerText = "ASKING AI...";
+                    document.getElementById('artist').innerText = "AURORA DJ";
+                    try {
+                        const res = await fetch(`/api/ai/dj`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ prompt: q })
+                        });
+                        const data = await res.json();
+                        if(data.response) {
+                            document.getElementById('title').innerText = "AI SAYS:";
+                            document.getElementById('artist').innerText = data.response;
+                            this.speak(data.response);
+                        } else {
+                             document.getElementById('title').innerText = "AI is silent...";
+                        }
+                    } catch(e) {
+                        console.error(e);
+                        document.getElementById('title').innerText = "AI ERROR";
+                    }
+                },
+    
+                speak(text) {
+                    if (!window.speechSynthesis) return;
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    // Попытка найти русский голос
+                    const ruVoice = this.voices.find(v => v.lang.startsWith('ru'));
+                    if (ruVoice) {
+                        utterance.voice = ruVoice;
+                    }
+                    utterance.rate = 1.1;
+                    utterance.pitch = 1.0;
+                    window.speechSynthesis.cancel(); // Отменяем предыдущие, если есть
+                    window.speechSynthesis.speak(utterance);
+                },
+    
+                play(i) {
+                    if(!this.state.p[i]) return;
+                    this.state.i = i;
+                    const t = this.state.p[i];
+                    document.getElementById('title').innerText = t.title;
+                    document.getElementById('artist').innerText = t.artist;
+                    this.audio.src = `/stream/${t.identifier}`;
+                    this.audio.play();
+                },
+    
+                toggle() { this.audio.paused ? this.audio.play() : this.audio.pause(); },
+                next() { this.play((this.state.i + 1) % this.state.p.length); },
+                prev() { this.play((this.state.i - 1 + this.state.p.length) % this.state.p.length); },
+    
+                ui: {
+                    setPlay(s) {
+                        document.getElementById('deck').classList.toggle('playing', s);
+                        document.getElementById('playBtn').innerText = s ? '⏸' : '▶';
+                    },
+                    toggleDrawer(s) {
+                        document.getElementById('drawer').classList.toggle('open', s);
+                    },
+                    renderPlaylist() {
+                        const l = document.getElementById('list');
+                        l.innerHTML = '';
+                        app.state.p.forEach((t, i) => {
+                            let d = document.createElement('div');
+                            d.className = 'item';
+                            d.innerText = `${i+1}. ${t.title}`;
+                            d.onclick = () => { app.play(i); app.ui.toggleDrawer(false); };
+                            l.appendChild(d);
+                        });
+                    }
+                },
+    
+                loadGenres() {
+                    const genres = {
+                        "🎸 Rock Hits": "rock hits",
+                        "🎤 Hip-Hop": "hip hop hits",
+                        "🕺 Pop 2024": "pop hits 2024",
+                        "🏎 Phonk": "phonk drift",
+                        "💤 Chill": "lofi hip hop"
+                    };
                     const l = document.getElementById('list');
-                    l.innerHTML = '';
-                    app.state.p.forEach((t, i) => {
+                    for(let [k,v] of Object.entries(genres)) {
                         let d = document.createElement('div');
                         d.className = 'item';
-                        d.innerText = `${i+1}. ${t.title}`;
-                        d.onclick = () => { app.play(i); app.ui.toggleDrawer('menu', false); };
+                        d.innerText = k;
+                        d.onclick = () => { app.searchPlaylist(v); app.ui.toggleDrawer(false); };
                         l.appendChild(d);
-                    });
-                    // Auto-open list on search
-                    app.ui.toggleDrawer('menu', true); 
+                    }
                 }
-            },
-
-            loadGenres() {
-                const genres = {
-                    "🎸 Rock 80s": "80s rock hits",
-                    "🎤 Hip-Hop 90s": "90s hip hop",
-                    "🏎 Phonk": "phonk drift",
-                    "💤 Chill / Lofi": "lofi hip hop",
-                    "💃 Pop 2024": "top pop hits 2024"
-                };
-                const l = document.getElementById('list');
-                for(let [k,v] of Object.entries(genres)) {
-                    let d = document.createElement('div');
-                    d.className = 'item';
-                    d.innerText = k;
-                    d.onclick = () => { app.search(v); app.ui.toggleDrawer('menu', false); };
-                    l.appendChild(d);
-                }
-            }
-        };
-        window.onload = () => app.init();
-    </script>
-</body>
+            };
+            window.onload = () => app.init();
+        </script></body>
 </html>
