@@ -2,196 +2,339 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurora System v3.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AURORA v3.3 STABLE</title>
+    <!-- Заглушка для фавиконки, чтобы не было 404 -->
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-        :root {
-            --bg: #008080; --gray: #c0c0c0; --dark: #000000; --green: #00ff00;
-            --shadow-light: #ffffff; --shadow-dark: #808080;
-            --navy: #000080;
-        }
-        * { box-sizing: border-box; }
-        body {
-            background-color: var(--bg); font-family: 'VT323', monospace; display: flex;
-            justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; user-select: none;
-        }
-        .window {
-            width: 95%; max-width: 400px; background: var(--gray); 
-            border: 2px solid var(--shadow-light); border-right-color: var(--dark); border-bottom-color: var(--dark);
-            padding: 4px; box-shadow: 8px 8px 0px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; gap: 8px;
-        }
-        .title-bar {
-            background: var(--navy); color: white; padding: 4px 8px; font-size: 20px; display: flex;
-            justify-content: space-between; align-items: center; letter-spacing: 1px;
-        }
-        .screen {
-            background: black; border: 2px inset var(--shadow-dark); height: 80px; padding: 10px;
-            color: var(--green); font-size: 22px; text-shadow: 0 0 5px var(--green);
-            display: flex; flex-direction: column; justify-content: center;
-            align-items: center; position: relative; overflow: hidden;
-        }
-        /* Scanline effect */
-        .screen::after {
-            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
-        }
-        .controls { display: flex; justify-content: space-between; gap: 5px; }
-        .btn {
-            flex: 1; background: var(--gray); border: 2px solid var(--shadow-light);
-            border-right-color: var(--dark); border-bottom-color: var(--dark);
-            padding: 10px 0; font-family: 'VT323', monospace; font-size: 18px; cursor: pointer; text-transform: uppercase;
-        }
-        .btn:active {
-            border: 2px solid var(--dark); border-right-color: var(--shadow-light); border-bottom-color: var(--shadow-light);
-            transform: translate(1px, 1px);
-        }
-        .marquee { white-space: nowrap; overflow: hidden; width: 100%; text-align: center; z-index: 1; }
-        .scrolling { display: inline-block; animation: scroll-text 10s linear infinite; }
-        @keyframes scroll-text { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
         
-        input[type="search"] {
-            width: 100%; padding: 8px; font-family: 'VT323', monospace; font-size: 18px;
-            border: 2px inset var(--shadow-dark); background: white; outline: none;
+        :root {
+            --bg: #008080; 
+            --gray: #c0c0c0; 
+            --dark: #000000; 
+            --green: #00ff00;
+            --navy: #000080;
+            --shadow-light: #ffffff; 
+            --shadow-dark: #808080;
         }
 
-        /* Drawer Playlist */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg); 
+            font-family: 'VT323', monospace; 
+            display: flex;
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden; 
+            user-select: none;
+        }
+
+        /* Главное окно - фиксируем размеры, чтобы не прыгало */
+        .window {
+            width: 320px; /* Фиксированная ширина как у Win95 диалогов */
+            background: var(--gray); 
+            border: 2px solid var(--shadow-light); 
+            border-right-color: var(--dark); 
+            border-bottom-color: var(--dark);
+            padding: 4px; 
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.5);
+            display: flex; 
+            flex-direction: column; 
+            gap: 6px;
+        }
+
+        .title-bar {
+            background: var(--navy); 
+            color: white; 
+            padding: 4px 6px; 
+            font-size: 20px; 
+            display: flex;
+            justify-content: space-between; 
+            align-items: center; 
+            letter-spacing: 1px;
+            height: 32px; /* Фикс высота */
+        }
+
+        /* Экран плеера - жесткая фиксация */
+        .screen {
+            background: black; 
+            border: 2px inset var(--shadow-dark); 
+            height: 80px; /* Строго фиксируем */
+            width: 100%;
+            padding: 0 10px;
+            color: var(--green); 
+            font-size: 22px; 
+            text-shadow: 0 0 5px var(--green);
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center;
+            align-items: center; 
+            position: relative; 
+            overflow: hidden;
+        }
+        
+        /* Сканлайн эффект */
+        .screen::after {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px; 
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* Бегущая строка */
+        .marquee-container {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .marquee-text {
+            display: inline-block;
+            /* Если текст длинный - скроллим, иначе стоим */
+            padding-left: 0; 
+        }
+        .scrolling .marquee-text {
+            padding-left: 100%;
+            animation: scroll 12s linear infinite;
+        }
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-200%); } }
+
+        .status-line {
+            font-size: 16px;
+            color: yellow;
+            margin-top: 4px;
+            height: 18px; /* Резервируем место под статус */
+        }
+
+        /* Кнопки управления */
+        .controls { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr; 
+            gap: 4px; 
+            height: 40px;
+        }
+        
+        .btn {
+            background: var(--gray); 
+            border: 2px solid var(--shadow-light);
+            border-right-color: var(--dark); 
+            border-bottom-color: var(--dark);
+            font-family: 'VT323', monospace; 
+            font-size: 24px; 
+            cursor: pointer; 
+            display: flex; align-items: center; justify-content: center;
+            line-height: 1;
+            padding-bottom: 4px; /* Визуальная коррекция шрифта */
+        }
+        
+        .btn:active {
+            border: 2px solid var(--dark); 
+            border-right-color: var(--shadow-light); 
+            border-bottom-color: var(--shadow-light);
+            transform: translate(1px, 1px);
+        }
+
+        /* Инпут */
+        input[type="search"] {
+            width: 100%; 
+            height: 36px;
+            padding: 4px 8px; 
+            font-family: 'VT323', monospace; 
+            font-size: 18px;
+            border: 2px inset var(--shadow-dark); 
+            background: white; 
+            outline: none;
+        }
+
+        /* Drawer (Список) */
         .drawer { 
-            position: fixed; inset: 0; background: var(--gray); z-index: 100; 
-            display: flex; flex-direction: column; transform: translateY(100%); 
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 10px; 
+            position: absolute; inset: 0; background: var(--gray); z-index: 100; 
+            display: flex; flex-direction: column; 
+            transform: translateY(105%); /* Прячем вниз */
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+            padding: 6px; 
+            border: 2px outset white;
         }
         .drawer.open { transform: translateY(0); }
+        
         .drawer-header { 
-            background: var(--navy); color: white; padding: 10px; font-size: 24px; text-align: center; margin-bottom: 10px;
+            background: var(--navy); color: white; padding: 6px; font-size: 20px; 
+            display: flex; justify-content: space-between;
             border: 2px solid var(--shadow-light); border-right-color: var(--dark); border-bottom-color: var(--dark);
         }
         .drawer-list { 
             flex: 1; overflow-y: auto; background: white; border: 2px inset var(--shadow-dark); 
-            padding: 5px; font-size: 20px; 
+            margin: 6px 0; padding: 2px;
         }
-        .item { padding: 12px 8px; border-bottom: 1px dotted #ccc; cursor: pointer; color: #333; }
+        .item { 
+            padding: 8px 4px; border-bottom: 1px dotted #ccc; 
+            cursor: pointer; color: #333; font-size: 18px; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
         .item.active { background: var(--navy); color: white; }
-        .item:hover { background: #ddd; }
-        
-        .loading { font-size: 14px; color: yellow; position: absolute; bottom: 2px; right: 5px; }
+        .item:hover { background: #eee; }
+
     </style>
 </head>
 <body>
     <div id="app"></div>
 
-    <!-- CLEANUP OLD SERVICE WORKERS -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                    console.log('Unregistering broken SW:', registration);
-                    registration.unregister();
-                }
-            });
-        }
-    </script>
-
     <script type="module">
-        // ИСПРАВЛЕННЫЕ ИМПОРТЫ (Без пробелов и ошибок версий)
+        // Используем надежные импорты без версий, чтобы всегда брать working build
         import { h, render } from 'https://esm.sh/preact';
         import { useState, useEffect, useRef } from 'https://esm.sh/preact/hooks';
         import htm from 'https://esm.sh/htm';
         const html = htm.bind(h);
 
         function App() {
-            // State
+            // --- STATE ---
             const [playlist, setPlaylist] = useState([]);
             const [trackIndex, setTrackIndex] = useState(0);
             const [isPlaying, setIsPlaying] = useState(false);
-            const [title, setTitle] = useState('AURORA SYSTEM v3.2');
-            const [drawerOpen, setDrawerOpen] = useState(false);
+            const [title, setTitle] = useState('AURORA v3.3 READY');
             const [status, setStatus] = useState('');
+            const [drawerOpen, setDrawerOpen] = useState(false);
+            const [voices, setVoices] = useState([]);
             
             const audioRef = useRef(null);
 
-            // --- Voice Initialization ---
-            const [voices, setVoices] = useState([]);
+            // --- VOICE INIT (ROBUST) ---
             useEffect(() => {
-                const loadVoices = () => {
-                    const available = window.speechSynthesis.getVoices();
-                    if (available.length > 0) {
-                        setVoices(available);
-                        console.log("Voices loaded:", available.length);
+                const initVoices = () => {
+                    const vs = window.speechSynthesis.getVoices();
+                    if (vs.length > 0) {
+                        setVoices(vs);
+                        // console.log(`Voices loaded: ${vs.length}`);
                     }
                 };
-                
-                window.speechSynthesis.onvoiceschanged = loadVoices;
-                loadVoices(); // Try immediately too
 
+                // Chrome хак: голоса могут загружаться асинхронно
+                window.speechSynthesis.onvoiceschanged = initVoices;
+                initVoices();
+                
+                // Таймер на случай если событие не сработает
+                const interval = setInterval(initVoices, 1000);
+                setTimeout(() => clearInterval(interval), 5000);
+
+                // Дефолтные жанры
                 loadGenres();
             }, []);
 
-            // --- Logic ---
+            // --- AUDIO LOGIC ---
             const playTrack = (index) => {
                 if (!playlist[index]) return;
+                
                 const track = playlist[index];
                 setTitle(`${track.artist} - ${track.title}`);
+                setStatus('BUFFERING...');
                 
-                // Reset audio to avoid glitches
+                // Остановить предыдущее
                 audioRef.current.pause();
-                audioRef.current.src = `/stream/${track.identifier}`;
-                audioRef.current.load();
                 
-                audioRef.current.play()
-                    .then(() => setIsPlaying(true))
-                    .catch(e => {
-                        console.error("Play error:", e);
-                        setStatus("CLICK PLAY TO START");
-                    });
+                // Задать новый источник
+                const streamUrl = `/stream/${track.identifier}`;
+                audioRef.current.src = streamUrl;
+                
+                // Пытаемся запустить
+                const playPromise = audioRef.current.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            setIsPlaying(true);
+                            setStatus('PLAYING');
+                        })
+                        .catch(error => {
+                            console.warn("Autoplay/Load error:", error);
+                            setIsPlaying(false);
+                            // Не показываем ошибку сразу, возможно это просто запрет автоплея
+                            if(error.name === 'NotSupportedError') {
+                                setStatus('MEDIA ERROR (404)');
+                            } else {
+                                setStatus('READY TO PLAY');
+                            }
+                        });
+                }
                 
                 setTrackIndex(index);
             };
 
             const togglePlay = () => {
-                if (!audioRef.current.src) {
+                if (!audioRef.current.src || audioRef.current.src === window.location.href) {
                      if(playlist.length > 0) playTrack(0);
                      return;
                 }
+                
                 if (audioRef.current.paused) {
-                    audioRef.current.play();
-                    setIsPlaying(true);
+                    audioRef.current.play()
+                        .then(() => { setIsPlaying(true); setStatus('PLAYING'); })
+                        .catch(e => setStatus('ERROR'));
                 } else {
                     audioRef.current.pause();
                     setIsPlaying(false);
+                    setStatus('PAUSED');
                 }
             };
 
             const nextTrack = () => playTrack((trackIndex + 1) % playlist.length);
             const prevTrack = () => playTrack((trackIndex - 1 + playlist.length) % playlist.length);
 
-            // --- API & Search ---
+            // --- TTS LOGIC ---
+            const speak = (text) => {
+                if (!window.speechSynthesis) return;
+                
+                window.speechSynthesis.cancel(); // Сброс очереди
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.1;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+
+                // Жесткий поиск русского голоса
+                // Приоритет: Google Русский -> Microsoft Ivan -> Любой 'ru'
+                const ruVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('ru')) 
+                             || voices.find(v => v.lang.includes('ru'))
+                             || voices[0];
+
+                if (ruVoice) {
+                    utterance.voice = ruVoice;
+                    // console.log("Speaking with:", ruVoice.name);
+                }
+
+                window.speechSynthesis.speak(utterance);
+            };
+
+            // --- API ---
             const searchApi = async (query) => {
-                setTitle('SEARCHING NET...');
-                setStatus('Loading...');
+                setTitle('SEARCHING...');
+                setStatus('LOADING NET...');
                 try {
                     const res = await fetch(`/api/player/playlist?query=${encodeURIComponent(query)}`);
                     const data = await res.json();
                     if (data.playlist?.length) {
                         setPlaylist(data.playlist);
                         setDrawerOpen(true);
-                        setStatus('');
-                        // Не запускаем автоплей сразу - браузеры блокируют звук без жеста
-                        setTitle(`FOUND ${data.playlist.length} TRACKS`);
+                        setStatus('DATA LOADED');
+                        setTitle(`FOUND ${data.playlist.length} ITEMS`);
+                        speak(`Нашла ${data.playlist.length} треков`);
                     } else {
-                        setTitle('DATA NOT FOUND');
+                        setStatus('NOT FOUND');
+                        speak("Ничего не найдено");
                     }
                 } catch (e) {
-                    setTitle('CONNECTION ERROR');
+                    setStatus('API ERROR');
                 }
-                setStatus('');
             };
             
             const askAI = async (query) => {
                 setTitle('AI THINKING...');
-                setStatus('Processing...');
+                setStatus('PROCESSING...');
                 try {
                     const res = await fetch('/api/ai/chat', {
                         method: 'POST',
@@ -200,28 +343,13 @@
                     });
                     const data = await res.json();
                     if (data.response) {
-                        setTitle('AI RESPONSE RECIEVED');
+                        setTitle('AI RESPONSE');
+                        setStatus('SPEAKING...');
                         speak(data.response);
                     }
                 } catch (e) {
-                    setTitle('AI OFFLINE');
+                    setStatus('AI OFFLINE');
                 }
-                setStatus('');
-            };
-
-            const speak = (text) => {
-                if (!window.speechSynthesis) return;
-                window.speechSynthesis.cancel(); // Stop previous
-                
-                const utterance = new SpeechSynthesisUtterance(text);
-                // Try to find a Russian voice
-                const ruVoice = voices.find(v => v.lang.includes('ru')) || voices[0];
-                if (ruVoice) utterance.voice = ruVoice;
-                
-                utterance.rate = 1.1;
-                utterance.pitch = 1.0;
-                
-                window.speechSynthesis.speak(utterance);
             };
 
             const handleInput = (e) => {
@@ -242,37 +370,45 @@
                 setPlaylist(genres);
             };
 
+            // --- RENDER ---
             return html`
                 <div class="window">
                     <div class="title-bar">
-                        <span>AURORA v3.2</span>
-                        <div style="font-size: 14px; cursor: pointer;" onClick=${() => window.location.reload()}>↺</div>
+                        <span>AURORA v3.3</span>
+                        <div style="cursor: pointer;" onClick=${() => window.location.reload()}>↺</div>
                     </div>
                     
                     <div class="screen">
-                        <div class="marquee">
-                            <span class="${isPlaying ? 'scrolling' : ''}">${title}</span>
+                        <div class="marquee-container ${isPlaying ? 'scrolling' : ''}">
+                            <span class="marquee-text">${title}</span>
                         </div>
-                        ${status && html`<div class="loading">${status}</div>`}
+                        <div class="status-line">${status}</div>
                     </div>
                     
                     <div class="controls">
-                        <button class="btn" onClick=${prevTrack}>|&lt;</button>
-                        <button class="btn" onClick=${togglePlay}>${isPlaying ? '||' : '▶'}</button>
-                        <button class="btn" onClick=${nextTrack}>&gt;|</button>
+                        <!-- Используем безопасные символы вместо HTML entities -->
+                        <button class="btn" onClick=${prevTrack}>⏮</button>
+                        <button class="btn" onClick=${togglePlay}>${isPlaying ? '⏸' : '▶'}</button>
+                        <button class="btn" onClick=${nextTrack}>⏭</button>
                     </div>
                     
-                    <input type="search" placeholder="Type '!message' or 'song name'..." onChange=${handleInput} />
+                    <input type="search" placeholder="Type '!chat' or 'song'..." onChange=${handleInput} />
                     
-                    <button class="btn" style="width: 100%;" onclick=${() => setDrawerOpen(true)}>📂 OPEN PLAYLIST</button>
+                    <button class="btn" style="font-size: 20px; padding: 8px;" onclick=${() => setDrawerOpen(true)}>
+                        📂 PLAYLIST
+                    </button>
                 </div>
 
+                <!-- DRAWER -->
                 <div class="drawer ${drawerOpen ? 'open' : ''}">
                     <div class="drawer-header">
-                        Loaded Media
-                        <div style="font-size:14px; cursor:pointer; float:right;" onClick=${() => setDrawerOpen(false)}>X</div>
+                        <span>PLAYLIST (${playlist.length})</span>
+                        <span style="cursor:pointer;" onClick=${() => setDrawerOpen(false)}>✖</span>
                     </div>
+                    
                     <div class="drawer-list">
+                         ${voices.length === 0 && html`<div style="color:red; padding:5px;">⚠️ VOICE API LOADING...</div>`}
+                         
                         ${playlist.map((track, i) => html`
                             <div class="item ${i === trackIndex ? 'active' : ''}" onClick=${() => {
                                 if (track.isGenre) {
@@ -282,18 +418,24 @@
                                     setDrawerOpen(false);
                                 }
                             }}>
-                                ${track.isGenre ? `📡 CHANNEL: ${track.title}` : `${i + 1}. ${track.artist} - ${track.title}`}
+                                ${track.isGenre ? `📡 ${track.title}` : `${i + 1}. ${track.artist} - ${track.title}`}
                             </div>
                         `)}
                     </div>
-                    <button class="btn" onClick=${() => setDrawerOpen(false)}>CLOSE DRAWER</button>
+                    
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn" style="flex:1; font-size:18px;" onClick=${() => speak("Проверка системы. Голос активен.")}>🔊 TEST VOICE</button>
+                        <button class="btn" style="flex:1; font-size:18px;" onClick=${() => setDrawerOpen(false)}>CLOSE</button>
+                    </div>
                 </div>
                 
                 <audio ref=${audioRef} 
-                    onPlay=${() => setIsPlaying(true)} 
-                    onPause=${() => setIsPlaying(false)} 
                     onEnded=${nextTrack} 
-                    onError=${() => setStatus('Stream Error')}
+                    onError=${(e) => {
+                        console.error("Audio Error:", e);
+                        setStatus("STREAM FAILED");
+                        setIsPlaying(false);
+                    }}
                 />
             `;
         }
