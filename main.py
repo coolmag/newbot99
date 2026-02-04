@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from config import get_settings
 from youtube import YouTubeDownloader
@@ -62,6 +63,18 @@ async def startup_event():
     app.state.radio_manager = radio_manager
 
 # --- API ДЛЯ ПЛЕЕРА ---
+
+class AIRequest(BaseModel):
+    prompt: str
+
+@app.post("/api/ai/chat")
+async def api_ai_chat(request: AIRequest):
+    if not request.prompt:
+        return JSONResponse(status_code=400, content={"error": "Prompt is empty"})
+    
+    response_text = await ai_manager.get_chat_response(request.prompt)
+    
+    return {"response": response_text}
 
 @app.get("/api/player/playlist")
 async def api_playlist(query: str):
