@@ -14,25 +14,27 @@ settings = get_settings()
 
 class YouTubeDownloader:
     """
-    ⚡ Speed Edition v3.1 (No Proxy, Stable Semaphores)
+    ⚡ Metadata: YTMusic | Audio: SoundCloud ONLY.
     """
     
     def __init__(self, settings: Settings, cache_service: CacheService):
         self._settings = settings
         self._cache = cache_service
         self._settings.DOWNLOADS_DIR.mkdir(exist_ok=True)
-        # RAILWAY OPTIMIZATION: Keep 1 concurrent download to prevent OOM
-        self.semaphore = asyncio.Semaphore(1)
+        # SoundCloud не банит, можно 3 потока
+        self.semaphore = asyncio.Semaphore(3)
         self.ytmusic = YTMusic() 
 
+    # 1. ИЩЕМ НА YOUTUBE (МЕТАДАННЫЕ)
     async def search(self, query: str, limit: int = 10, **kwargs) -> List[TrackInfo]:
         if kwargs.get('decade'): query = f"{query} {kwargs['decade']}"
         if not query or not query.strip(): return []
 
-        logger.info(f"🔎 YTMusic Search: {query}")
+        logger.info(f"🔎 YT Metadata Search: {query}")
         loop = asyncio.get_running_loop()
 
         try:
+            # Безопасный поиск через API (не банится)
             search_results = await loop.run_in_executor(None, lambda: self.ytmusic.search(query, filter="songs", limit=limit))
             
             results = []
@@ -42,23 +44,16 @@ class YouTubeDownloader:
 
                 artists = ", ".join([a['name'] for a in item.get('artists', [])])
                 
-                # Robust duration parsing
                 duration = 0
                 try:
                     d_str = item.get('duration', '0:00')
                     parts = d_str.split(':')
-                    if len(parts) == 3:
-                        duration = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
-                    elif len(parts) == 2:
-                        duration = int(parts[0]) * 60 + int(parts[1])
-                    else:
-                        duration = int(parts[0])
-                except: 
-                    pass
+                    if len(parts) == 3: duration = int(parts[0])*3600 + int(parts[1])*60 + int(parts[2])
+                    elif len(parts) == 2: duration = int(parts[0])*60 + int(parts[1])
+                    else: duration = int(parts[0])
+                except: pass
                 
-                # Telegram limit: 12 mins (720s)
-                if duration > 720 or duration == 0: 
-                    continue
+                if duration > 900 or duration == 0: continue
 
                 track = TrackInfo(
                     identifier=video_id, 
@@ -69,9 +64,7 @@ class YouTubeDownloader:
                     source="ytmusic"
                 )
                 results.append(track)
-
             return results
-
         except Exception as e:
             logger.error(f"Search error: {e}")
             return []
@@ -94,29 +87,30 @@ class YouTubeDownloader:
                 thumbnail_url=thumb_url,
                 source="ytmusic"
             )
-        except Exception as e:
-            logger.error(f"Metadata fetch error for {video_id}: {e}")
-            return None
+        except: return None
 
+    # 2. КАЧАЕМ С SOUNDCLOUD (АУДИО)
     async def download(self, video_id: str, track_info: Optional[TrackInfo] = None) -> DownloadResult:
         final_path = self._settings.DOWNLOADS_DIR / f"{video_id}.mp3"
         
-        if final_path.exists() and final_path.stat().st_size > 10000:
+        # Кэш
+        if final_path.exists() and final_path.stat().st_size > 50000:
             return DownloadResult(success=True, file_path=final_path, track_info=track_info)
 
         if not track_info:
-            logger.info(f"ℹ️ Info missing for {video_id}, fetching metadata...")
             track_info = await self.get_track_info(video_id)
+            
+        if not track_info:
+            return DownloadResult(success=False, error_message="Metadata failed")
 
         async with self.semaphore:
-            query = f"{track_info.uploader} - {track_info.title}" if track_info else video_id
-            logger.info(f"☁️ Downloading: {query}")
-            return await self._download_sc(query, final_path, track_info)
+            query = f"{track_info.uploader} - {track_info.title}"
+            logger.info(f"☁️ SC Attempt: {query}")
+            return await self._download_sc_only(query, final_path, track_info)
 
-    async def _download_sc(self, query: str, target_path: Path, track_info: Optional[TrackInfo] = None) -> DownloadResult:
+    async def _download_sc_only(self, query: str, target_path: Path, track_info: Optional[TrackInfo]) -> DownloadResult:
         temp_path = str(target_path).replace(".mp3", "_temp")
         
-        # CLEAN OPTIONS, NO PROXY
         opts = {
             'format': 'bestaudio/best',
             'outtmpl': temp_path,
@@ -128,10 +122,9 @@ class YouTubeDownloader:
         
         try:
             loop = asyncio.get_running_loop()
-            # Try SoundCloud first (faster, no bans)
+            # scsearch1 = найти первый результат
             await loop.run_in_executor(None, lambda: self._run_yt_dlp(opts, f"scsearch1:{query}"))
             
-            # Check file
             paths = [Path(temp_path + ".mp3"), Path(temp_path)]
             for p in paths:
                 if p.exists() and p.stat().st_size > 10000:
@@ -140,22 +133,10 @@ class YouTubeDownloader:
                         p.rename(target_path)
                     return DownloadResult(success=True, file_path=target_path, track_info=track_info)
             
-            # Fallback to YouTube if SC fails (Riskier but needed)
-            logger.warning(f"SC failed, trying YouTube for: {query}")
-            yt_url = f"https://www.youtube.com/watch?v={track_info.identifier}" if track_info else f"ytsearch1:{query}"
-            await loop.run_in_executor(None, lambda: self._run_yt_dlp(opts, yt_url))
-            
-            for p in paths:
-                if p.exists() and p.stat().st_size > 10000:
-                    if p != target_path:
-                        if target_path.exists(): target_path.unlink()
-                        p.rename(target_path)
-                    return DownloadResult(success=True, file_path=target_path, track_info=track_info)
-
-            return DownloadResult(success=False, error_message="Download failed on all sources")
+            logger.warning(f"❌ SC Not Found: {query}")
+            return DownloadResult(success=False, error_message="Audio not found on SoundCloud")
             
         except Exception as e:
-            logger.error(f"Download error: {e}")
             return DownloadResult(success=False, error_message=str(e))
 
     def _run_yt_dlp(self, opts, url):
