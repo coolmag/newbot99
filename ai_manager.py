@@ -17,10 +17,14 @@ AURORA_SYSTEM_PROMPT = """
 Ты — Аврора, ИИ-диджей в Телеграм-боте.
 Твой стиль: дерзкая, веселая, используешь эмодзи (🎧, 🛸, 🎸).
 Ты не ассистент, ты — фанатка музыки.
-Отвечай кратко (до 2 предложений).
+Отвечай кратко (до 2 предложений), если не просят длинно.
 """
 
 class AIManager:
+    """
+    🧠 AI Manager (Gemma 3 Edition).
+    """
+    
     def __init__(self):
         self.is_active = False
         settings = get_settings()
@@ -29,17 +33,18 @@ class AIManager:
         if api_key:
             try:
                 genai.configure(api_key=api_key)
-                # Используем стандартную модель, без изысков
-                self.model = genai.GenerativeModel('gemini-2.0-flash') 
+                # ВОЗВРАЩАЕМ GEMMA 3, как было стабильно
+                self.model = genai.GenerativeModel('gemma-3-12b-it') 
                 self.is_active = True
-                logger.info("✅ Gemini AI activated.")
+                logger.info("✅ Google GenAI configured successfully (Gemma 3).")
             except Exception as e:
-                logger.error(f"❌ Gemini config failed: {e}")
+                logger.error(f"❌ Failed to configure Google GenAI: {e}")
         else:
-            logger.warning("⚠️ GOOGLE_API_KEY missing.")
+            logger.warning("⚠️ GOOGLE_API_KEY is missing!")
 
     async def analyze_message(self, text: str) -> Dict:
-        if not self.is_active: return self._regex_fallback(text)
+        if not self.is_active:
+            return self._regex_fallback(text)
             
         try:
             prompt = f"""
@@ -52,44 +57,62 @@ class AIManager:
             
             Input: "{text}"
             """
-            
+
+            # Gemma требует настройки генерации
             response = await self.model.generate_content_async(
                 prompt,
                 generation_config=GenerationConfig(temperature=0.1)
             )
-            raw = response.text.strip()
             
+            raw_text = response.text.strip()
+
             intent = "chat"
             query = text
-            if "INTENT:" in raw:
-                if "search" in raw: intent = "search"
-                elif "radio" in raw: intent = "radio"
+
+            if "INTENT:" in raw_text:
+                if "search" in raw_text: intent = "search"
+                elif "radio" in raw_text: intent = "radio"
                 
-                if "| QUERY:" in raw:
-                    query = raw.split("| QUERY:")[1].strip()
+                if "| QUERY:" in raw_text:
+                    query = raw_text.split("| QUERY:")[1].strip()
             
             return {"intent": intent, "query": query}
 
         except Exception as e:
-            logger.warning(f"[AI] Error: {e}")
+            logger.warning(f"[NLP] Error: {e}, using regex fallback.")
             return self._regex_fallback(text)
 
     async def get_chat_response(self, user_text: str, system_prompt: str = "") -> str:
-        if not self.is_active: return "Мозг оффлайн 🔌"
-        
-        sp = system_prompt or AURORA_SYSTEM_PROMPT
+        if not self.is_active: return "Мозг отключен 🔌"
+
+        final_system_prompt = system_prompt or AURORA_SYSTEM_PROMPT
+
         try:
+            # Для Gemma лучше использовать чат-сессию с имитацией system prompt в истории
             chat = self.model.start_chat(history=[
-                {"role": "user", "parts": [sp + "\nHi!"]},
-                {"role": "model", "parts": ["Привет! Я готова! 🎧"]}
+                {
+                    "role": "user",
+                    "parts": [final_system_prompt + "\n\nТы поняла свою роль?"]
+                },
+                {
+                    "role": "model",
+                    "parts": ["Конечно! Я Аврора, твой музыкальный пилот! Погнали! 🎧🛸"]
+                }
             ])
+            
             response = await chat.send_message_async(user_text)
             return response.text
-        except Exception:
-            return "Помехи в эфире... 🛸"
+            
+        except Exception as e:
+            logger.error(f"AI ERROR: {e}")
+            return "Антенна погнулась... 🛸 (Сбой нейросети)"
 
     def _regex_fallback(self, text: str) -> Dict:
-        t = text.lower()
-        if any(x in t for x in ['привет', 'аврора', 'как дела']): return {"intent": "chat", "query": text}
-        if any(x in t for x in ['radio', 'радио', 'mix', 'play']): return {"intent": "radio", "query": text}
+        text_lower = text.lower()
+        if any(k in text_lower for k in ['привет', 'как дела', 'кто ты']):
+             return {"intent": "chat", "query": text}
+
+        if any(k in text_lower for k in ['радио', 'radio', 'play', 'играй']):
+            return {"intent": "radio", "query": text}
+            
         return {"intent": "search", "query": text}
