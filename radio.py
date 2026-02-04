@@ -154,12 +154,19 @@ class RadioSession:
             
             caption = get_now_playing_message(track, self.display_name)
             
+            # --- ВОЗВРАЩАЕМ КНОПКУ ПЛЕЕРА ---
+            markup = None
+            base_url = self.settings.BASE_URL.strip() if self.settings.BASE_URL else ""
+            if base_url.startswith("https") and self.chat_type != ChatType.CHANNEL:
+                markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔗 Плеер", url=base_url)]])
+            # ------------------------------------
+
             # Логика отправки файла
             sent = False
             try:
                 if result.file_path:
                     with open(result.file_path, 'rb') as f:
-                        await self.bot.send_audio(self.chat_id, audio=f, caption=caption, parse_mode=ParseMode.MARKDOWN)
+                        await self.bot.send_audio(self.chat_id, audio=f, caption=caption, parse_mode=ParseMode.MARKDOWN, reply_markup=markup)
                         sent = True
             except Forbidden: await self._handle_forbidden(); return False
             except Exception: return False
