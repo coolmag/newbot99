@@ -2,250 +2,226 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Aurora 1996</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora System 1.0</title>
     <style>
-        :root { --bg: #c0c0c0; --win-blue: #000080; }
-        body { background: #008080; font-family: sans-serif; font-size: 12px; display: flex; flex-direction: column; align-items: center; margin: 20px; user-select: none; }
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        :root {
+            --bg: #008080; --gray: #c0c0c0; --dark: #000000; --green: #00ff00;
+            --shadow-light: #ffffff; --shadow-dark: #808080;
+        }
+        body {
+            background-color: var(--bg); font-family: 'VT323', monospace; display: flex;
+            justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; user-select: none;
+        }
+        .window {
+            width: 300px; background: var(--gray); border-top: 2px solid var(--shadow-light);
+            border-left: 2px solid var(--shadow-light); border-right: 2px solid var(--dark);
+            border-bottom: 2px solid var(--dark); padding: 4px; box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+        }
+        .title-bar {
+            background: navy; color: white; padding: 2px 5px; font-size: 18px; display: flex;
+            justify-content: space-between; align-items: center; margin-bottom: 4px;
+        }
+        .screen {
+            background: black; border: 2px inset var(--shadow-dark); height: 60px; padding: 5px;
+            color: var(--green); font-size: 18px; text-shadow: 0 0 5px var(--green);
+            margin-bottom: 5px; display: flex; flex-direction: column; justify-content: center;
+            align-items: center; position: relative; overflow: hidden;
+        }
+        .scanline {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%; pointer-events: none;
+        }
+        .controls { display: flex; justify-content: space-between; gap: 5px; margin-bottom: 5px; }
+        .btn {
+            flex: 1; background: var(--gray); border-top: 2px solid var(--shadow-light);
+            border-left: 2px solid var(--shadow-light); border-right: 2px solid var(--dark);
+            border-bottom: 2px solid var(--dark); padding: 5px 0; font-family: 'VT323', monospace;
+            font-size: 16px; cursor: pointer;
+        }
+        .btn:active {
+            border-top: 2px solid var(--dark); border-left: 2px solid var(--dark);
+            border-right: 2px solid var(--shadow-light); border-bottom: 2px solid var(--shadow-light);
+        }
+        .marquee { white-space: nowrap; overflow: hidden; width: 100%; text-align: center; }
+        .scrolling { display: inline-block; animation: scroll-text 8s linear infinite; }
+        @keyframes scroll-text { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
         
-        .window { background: var(--bg); border: 2px solid; border-color: #fff #808080 #808080 #fff; width: 320px; padding: 3px; box-shadow: 1px 1px 0 #000; }
-        .title-bar { background: linear-gradient(90deg, var(--win-blue), #1084d0); color: white; padding: 3px 5px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-        
-        .deck { border: 2px inset #fff; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .label { background: #f0f0f0; width: 100%; border: 1px solid #555; padding: 5px; position: relative; }
-        .screen { background: #000; color: #0f0; font-family: monospace; padding: 5px; height: 50px; overflow: hidden; border: 2px inset #808080; }
-        
-        canvas { width: 100%; height: 28px; background: #000; display: block; }
-
-        .reels { display: flex; justify-content: center; gap: 40px; margin: 10px 0; }
-        .spool { width: 30px; height: 30px; border: 3px dashed #333; border-radius: 50%; background: #fff; }
-        .playing .spool { animation: r 2s linear infinite; }
-        @keyframes r { 100% { transform: rotate(360deg); } }
-
-        .btn { background: var(--bg); border: 2px outset #fff; padding: 4px 8px; cursor: pointer; font-family: sans-serif; font-size: 11px; }
-        .btn:active { border-style: inset; padding: 5px 7px 3px 9px; }
-        
-        input { border: 2px inset #fff; padding: 3px; width: 140px; outline: none; }
-        marquee { font-size: 14px; font-weight: bold; height: 16px; }
-
-        .drawer { position: fixed; inset: 0; background: var(--bg); border: 2px outset white; z-index: 100; display: flex; flex-direction: column; transform: translateY(100%); transition: 0.3s ease-out; padding: 10px; }
+        .drawer { position: fixed; inset: 0; background: var(--gray); border: 2px outset white; z-index: 100; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.3s ease-out; padding: 10px; }
         .drawer.open { transform: translateY(0); }
-        .drawer-header { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 10px; padding: 5px; background: var(--win-blue); color: white; }
-        .drawer-list { flex: 1; overflow-y: auto; background: white; border: 2px inset #808080; padding: 5px; }
-        .item { padding: 10px; border-bottom: 1px solid #ccc; cursor: pointer; color: #333; }
-        .item:hover { color: white; background: var(--win-blue); }
-        .close-btn { margin-top: 10px; padding: 10px; background: var(--bg); color: var(--text); border: 2px outset white; width: 100%; cursor: pointer; }
-        .close-btn:active { border-style: inset; }
+        .drawer-header { text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 10px; padding: 5px; background: navy; color: white; }
+        .drawer-list { flex: 1; overflow-y: auto; background: white; border: 2px inset #808080; padding: 5px; font-size: 18px; }
+        .item { padding: 8px; border-bottom: 1px solid #ccc; cursor: pointer; color: #333; }
+        .item:hover { color: white; background: navy; }
+        .close-btn { margin-top: 10px; padding: 10px; font-size: 20px; }
     </style>
 </head>
 <body>
+    <div id="app"></div>
 
-<div class="window">
-    <div class="title-bar">
-        <span>Aurora_Player.exe</span>
-        <span>✕</span>
-    </div>
-    
-    <div class="deck" id="playerNode">
-        <div class="label">
-            <div class="screen">
-                <marquee id="title">READY TO PLAY...</marquee>
-                <canvas id="v"></canvas>
-            </div>
-            <div class="reels">
-                <div class="spool"></div>
-                <div class="spool"></div>
-            </div>
-        </div>
+    <script type="module">
+        import { h, render, useState, useEffect, useRef } from 'https://unpkg.com/preact?module';
+        import htm from 'https://unpkg.com/htm?module';
+        const html = htm.bind(h);
 
-        <div style="display:flex; gap:5px">
-            <button class="btn" onclick="app.prev()">PREV</button>
-            <button class="btn" id="playBtn" onclick="initAudio(); app.toggle()">PLAY</button>
-            <button class="btn" onclick="app.next()">NEXT</button>
-        </div>
-
-        <div style="display:flex; gap:5px; align-items:center; margin-top: 5px;">
-            <input id="search" placeholder="!ai or search..." onchange="app.search(this.value)">
-            <button class="btn" onclick="app.ui.toggleDrawer(true)">LIST</button>
-        </div>
-    </div>
-</div>
-
-<!-- Drawer (Playlist) -->
-<div class="drawer" id="drawer">
-    <div class="drawer-header">PLAYLIST</div>
-    <div class="drawer-list" id="list"></div>
-    <button class="close-btn" onclick="app.ui.toggleDrawer(false)">CLOSE</button>
-</div>
-
-<script>
-    let ctx, anal, data;
-    function initAudio() {
-        if (ctx) return;
-        try {
-            ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const src = ctx.createMediaElementSource(app.audio);
-            anal = ctx.createAnalyser();
-            src.connect(anal);
-            anal.connect(ctx.destination);
-            anal.fftSize = 32;
-            data = new Uint8Array(anal.frequencyBinCount);
-            draw();
-        } catch (e) {
-            console.error("Web Audio API failed to initialize:", e);
-        }
-    }
-
-    function draw() {
-        requestAnimationFrame(draw);
-        if (!anal) return;
-        const cvs = document.getElementById('v');
-        const c = cvs.getContext('2d');
-        anal.getByteFrequencyData(data);
-        c.clearRect(0, 0, cvs.width, cvs.height);
-        const barWidth = cvs.width / data.length;
-        c.fillStyle = '#00ff00';
-        data.forEach((v, i) => {
-            const h = (v / 255) * cvs.height;
-            c.fillRect(i * barWidth, cvs.height - h, barWidth - 1, h);
-        });
-    }
-
-    const app = {
-        state: { p: [], i: 0 },
-        audio: new Audio(),
-        voices: [],
-        
-        init() {
-            this.audio.crossOrigin = "anonymous";
-            this.audio.onended = () => this.next();
-            this.audio.onplay = () => this.ui.setPlay(true);
-            this.audio.onpause = () => this.ui.setPlay(false);
-            this.loadGenres();
+        function App() {
+            // State
+            const [playlist, setPlaylist] = useState([]);
+            const [trackIndex, setTrackIndex] = useState(0);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [title, setTitle] = useState('AURORA SYSTEM 1.0');
+            const [voices, setVoices] = useState([]);
+            const [drawerOpen, setDrawerOpen] = useState(false);
             
-            window.speechSynthesis.onvoiceschanged = () => {
-                this.voices = window.speechSynthesis.getVoices();
-                console.log("Voices loaded:", this.voices.length);
+            const audioRef = useRef(null);
+
+            // --- Effects ---
+            useEffect(() => {
+                window.speechSynthesis.onvoiceschanged = () => {
+                    console.log("Voices loaded!");
+                    setVoices(window.speechSynthesis.getVoices());
+                };
+                loadGenres();
+            }, []);
+
+            // --- Core Functions ---
+            const playTrack = (index) => {
+                if (!playlist[index]) return;
+                const track = playlist[index];
+                setTitle(`${track.artist} - ${track.title}`);
+                audioRef.current.src = `/stream/${track.identifier}`;
+                audioRef.current.play().catch(e => console.error("Play error:", e));
+                setTrackIndex(index);
             };
-        },
 
-        search(q) {
-            if(!q) return;
-            if (q.startsWith('!')) {
-                this.askAI(q.substring(1).trim());
-            } else {
-                this.searchPlaylist(q);
-            }
-            document.getElementById('search').value = '';
-        },
-        
-        async searchPlaylist(q) {
-            document.getElementById('title').innerText = "SEARCHING...";
-            try {
-                const res = await fetch(`/api/player/playlist?query=${encodeURIComponent(q)}`);
-                const data = await res.json();
-                if(data.playlist?.length) {
-                    this.state.p = data.playlist;
-                    this.play(0);
-                    this.ui.renderPlaylist();
-                } else {
-                    document.getElementById('title').innerText = "NOTHING FOUND";
-                }
-            } catch(e) { console.error(e); document.getElementById('title').innerText = "ERROR"; }
-        },
-
-        async askAI(q) {
-            document.getElementById('title').innerText = "THINKING...";
-            try {
-                const res = await fetch(`/api/ai/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: q })
-                });
-                const data = await res.json();
-                if(data.response) {
-                    document.getElementById('title').innerText = data.response;
-                    this.speak(data.response);
-                } else {
-                     document.getElementById('title').innerText = "AI is silent...";
-                }
-            } catch(e) { console.error(e); document.getElementById('title').innerText = "AI OFFLINE"; }
-        },
-
-        speak(text) {
-            console.log("Attempting to speak:", text);
-            if (!window.speechSynthesis) {
-                console.error("Speech Synthesis not supported.");
-                return;
-            }
-            const utterance = new SpeechSynthesisUtterance(text);
-            const ruVoice = this.voices.find(v => v.lang.startsWith('ru'));
-            if (ruVoice) {
-                utterance.voice = ruVoice;
-                console.log("Using Russian voice:", ruVoice.name);
-            } else {
-                console.log("Russian voice not found, using default.");
-            }
-            utterance.rate = 1;
-            utterance.pitch = 1;
-            window.speechSynthesis.cancel();
-            window.speechSynthesis.speak(utterance);
-        },
-
-        play(i) {
-            if(!this.state.p[i]) return;
-            initAudio(); // Ensure audio context is ready
-            this.state.i = i;
-            const t = this.state.p[i];
-            document.getElementById('title').innerText = `${t.artist} - ${t.title}`;
-            this.audio.src = `/stream/${t.identifier}`;
-            this.audio.play();
-        },
-
-        toggle() { this.audio.paused ? this.audio.play() : this.audio.pause(); },
-        next() { this.play((this.state.i + 1) % this.state.p.length); },
-        prev() { this.play((this.state.i - 1 + this.state.p.length) % this.state.p.length); },
-
-        ui: {
-            setPlay(s) {
-                document.getElementById('playerNode').classList.toggle('playing', s);
-                document.getElementById('playBtn').innerText = s ? 'STOP' : 'PLAY';
-            },
-            toggleDrawer(s) {
-                document.getElementById('drawer').classList.toggle('open', s);
-            },
-            renderPlaylist() {
-                const l = document.getElementById('list');
-                l.innerHTML = '';
-                app.state.p.forEach((t, i) => {
-                    let d = document.createElement('div');
-                    d.className = 'item';
-                    d.innerText = `${i+1}. ${t.artist} - ${t.title}`;
-                    d.onclick = () => { app.play(i); app.ui.toggleDrawer(false); };
-                    l.appendChild(d);
-                });
-            }
-        },
-
-        loadGenres() {
-            const genres = {
-                "Pop Hits": "pop hits 2024",
-                "Russian Gold": "русские хиты 90х",
-                "Rock Classics": "rock classics hits",
-                "Phonk / Drift": "phonk drift",
-                "Lofi / Study": "lofi hip hop"
+            const togglePlay = () => {
+                if (!playlist.length) return;
+                audioRef.current.paused ? audioRef.current.play() : audioRef.current.pause();
             };
-            const l = document.getElementById('list');
-            l.innerHTML = '';
-            for(let [k,v] of Object.entries(genres)) {
-                let d = document.createElement('div');
-                d.className = 'item';
-                d.innerHTML = `► ${k}`;
-                d.onclick = () => { this.searchPlaylist(v); this.ui.toggleDrawer(false); };
-                l.appendChild(d);
-            }
+            const nextTrack = () => playTrack((trackIndex + 1) % playlist.length);
+            const prevTrack = () => playTrack((trackIndex - 1 + playlist.length) % playlist.length);
+
+            // --- API Functions ---
+            const searchApi = async (endpoint, query) => {
+                setTitle('SEARCHING...');
+                try {
+                    const res = await fetch(endpoint + encodeURIComponent(query));
+                    const data = await res.json();
+                    if (data.playlist?.length) {
+                        setPlaylist(data.playlist);
+                        playTrack(0);
+                        setDrawerOpen(true);
+                    } else {
+                        setTitle('NOTHING FOUND');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    setTitle('API OFFLINE');
+                }
+            };
+            
+            const askAI = async (query) => {
+                setTitle('AI IS THINKING...');
+                try {
+                    const res = await fetch('/api/ai/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: query })
+                    });
+                    const data = await res.json();
+                    if (data.response) {
+                        setTitle(data.response);
+                        speak(data.response);
+                    } else {
+                        setTitle('AI IS SILENT...');
+                    }
+                } catch (e) {
+                    console.error("AI Error:", e);
+                    setTitle('AI OFFLINE');
+                }
+            };
+
+            const speak = (text) => {
+                console.log("Attempting to speak:", text);
+                if (!window.speechSynthesis) {
+                    console.error("Speech Synthesis not supported here.");
+                    return;
+                }
+                const utterance = new SpeechSynthesisUtterance(text);
+                const ruVoice = voices.find(v => v.lang.startsWith('ru'));
+                if (ruVoice) {
+                    utterance.voice = ruVoice;
+                    console.log("Using voice:", ruVoice.name);
+                }
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+            };
+
+            const handleSearch = (e) => {
+                const query = e.target.value;
+                if (!query) return;
+                query.startsWith('!') ? askAI(query.substring(1)) : searchApi('/api/player/playlist?query=', query);
+                e.target.value = '';
+            };
+            
+            const loadGenres = () => {
+                const genres = [
+                    { name: "Pop Hits", query: "pop hits 2024" },
+                    { name: "Russian 90s", query: "русские хиты 90х" },
+                    { name: "Rock Classics", query: "rock classics" },
+                    { name: "Phonk", query: "phonk drift" },
+                ];
+                setPlaylist(genres.map(g => ({...g, artist: "Genre", title: g.name, isGenre: true })));
+            };
+
+            // --- Render ---
+            return html`
+                <div class="window">
+                    <div class="title-bar">
+                        <span>Aurora System</span>
+                        <div class="close-btn">x</div>
+                    </div>
+                    <div class="screen">
+                        <div class="scanline"></div>
+                        <div class="marquee">
+                            <span class="${isPlaying ? 'scrolling' : ''}">${title}</span>
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <button class="btn" onClick=${prevTrack}>« PREV</button>
+                        <button class="btn" onClick=${togglePlay}>${isPlaying ? '|| PAUSE' : '▶ PLAY'}</button>
+                        <button class="btn" onClick=${nextTrack}>NEXT »</button>
+                    </div>
+                     <input type="search" placeholder="!ask AI or search..." onchange=${handleSearch} style="width: 100%; margin-top: 5px; padding: 5px; font-size: 16px;" />
+                     <button class="btn" style="width: 100%; margin-top: 5px;" onclick=${() => setDrawerOpen(true)}>☰ PLAYLIST</button>
+                </div>
+
+                <div class="drawer ${drawerOpen ? 'open' : ''}">
+                    <div class="drawer-header">PLAYLIST</div>
+                    <div class="drawer-list">
+                        ${playlist.map((track, i) => html`
+                            <div class="item" onClick=${() => {
+                                if (track.isGenre) {
+                                    searchApi('/api/player/playlist?query=', track.query);
+                                } else {
+                                    playTrack(i);
+                                }
+                                setDrawerOpen(false);
+                            }}>
+                                ${track.isGenre ? `► ${track.name}` : `${i + 1}. ${track.artist} - ${track.title}`}
+                            </div>
+                        `)}
+                    </div>
+                    <button class="btn close-btn" onClick=${() => setDrawerOpen(false)}>CLOSE</button>
+                </div>
+                
+                <audio ref=${audioRef} onPlay=${() => setIsPlaying(true)} onPause=${() => setIsPlaying(false)} onEnded=${nextTrack} />
+            `;
         }
-    };
-    window.onload = () => app.init();
-</script>
+
+        render(html`<${App} />`, document.getElementById('app'));
+    </script>
 </body>
 </html>
