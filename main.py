@@ -36,7 +36,7 @@ ai_manager = AIManager()
 Path("static").mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
- @app.on_event("startup")
+@app.on_event("startup")
 async def startup_event():
     await cache_service.initialize()
     from telegram.ext import Application
@@ -60,12 +60,12 @@ async def startup_event():
 class AIRequest(BaseModel):
     prompt: str
 
- @app.post("/api/ai/chat")
+@app.post("/api/ai/chat")
 async def api_ai_chat(request: AIRequest):
     resp = await ai_manager.get_chat_response(request.prompt)
     return {"response": resp}
 
- @app.get("/api/player/playlist")
+@app.get("/api/player/playlist")
 async def api_playlist(query: str):
     if not query: return {"playlist": []}
     tracks = await downloader.search(query, limit=20)
@@ -84,7 +84,7 @@ async def api_playlist(query: str):
         ]
     }
 
- @app.get("/stream/{video_id}")
+@app.get("/stream/{video_id}")
 async def stream_track(video_id: str):
     final_path = settings.DOWNLOADS_DIR / f"{video_id}.mp3"
     
@@ -99,7 +99,7 @@ async def stream_track(video_id: str):
     
     return JSONResponse(status_code=404, content={"error": "Download failed"})
 
- @app.post("/telegram")
+@app.post("/telegram")
 async def telegram_webhook(request: Request):
     try:
         data = await request.json()
@@ -111,7 +111,7 @@ async def telegram_webhook(request: Request):
         logger.error(f"Webhook error: {e}")
     return {"status": "ok"}
 
- @app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 async def root():
     try:
         with open("static/index.html", "r", encoding="utf-8") as f:
