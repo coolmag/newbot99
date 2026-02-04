@@ -3,227 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aurora Player 1996</title>
+    <title>Aurora Player 1996 GOLD Edition</title>
     <style>
-        :root { --bg: silver; --text: black; --accent: #0000FF; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'MS Sans Serif', 'Arial', 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; user-select: none; }
+        /* РЕТРО-ШРИФТ И ОБЩИЙ СТИЛЬ */
+        :root { 
+            --bg: #c0c0c0; /* Тот самый серый Windows 95 */
+            --text: black; 
+            --accent: #000080; /* Темно-синий заголовок */
+        }
         
-        /* DECK */
-        .deck-container { margin-top: 20px; position: relative; width: 340px; height: 220px; background: var(--bg); border: 2px solid; border-color: #dfdfdf #808080 #808080 #dfdfdf; border-style: solid; display: flex; flex-direction: column; align-items: center; padding: 15px; }
-        .screw { position: absolute; width: 8px; height: 8px; background: #808080; border: 1px inset #555; }
-        .tl { top: 8px; left: 8px; } .tr { top: 8px; right: 8px; } .bl { bottom: 8px; left: 8px; } .br { bottom: 8px; right: 8px; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; image-rendering: pixelated; }
         
-        /* LABEL */
-        .label { width: 100%; height: 130px; background: #fdfdf0; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; color: #111; border: 1px solid #808080; }
-        .label-top { width: 100%; height: 5px; background: #008080; }
-        .track-info { margin-top: 10px; text-align: center; width: 90%; z-index: 2; }
-        .title { font-weight: bold; font-size: 14px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .artist { font-size: 11px; color: #333; }
+        body { 
+            margin: 0; 
+            background-color: #008080; /* Классический бирюзовый фон рабочего стола */
+            background-image: url('https://i.gifer.com/origin/c8/c88c79215835a4d785a2e88a38a221c5_w200.gif'); /* Эффект старого монитора */
+            color: var(--text); 
+            font-family: 'MS Sans Serif', 'Tahoma', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden; 
+            user-select: none;
+        }
+
+        /* ЗАГОЛОВОК ОКНА (В СТИЛЕ WIN95) */
+        .window-header {
+            width: 350px;
+            background: linear-gradient(90deg, #000080, #1084d0);
+            color: white;
+            padding: 3px 6px;
+            font-weight: bold;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .win-buttons { display: flex; gap: 2px; }
+        .win-btn { width: 16px; height: 14px; background: var(--bg); border: 1px outset white; font-size: 9px; display: flex; align-items: center; justify-content: center; color: black; box-shadow: 1px 1px 0 black; }
+
+        /* DECK (ОСНОВНОЙ КОРПУС) */
+        .deck-container { 
+            position: relative; 
+            width: 350px; 
+            background: var(--bg); 
+            border-left: 2px solid white;
+            border-top: 2px solid white;
+            border-right: 2px solid black;
+            border-bottom: 2px solid black;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 10px; 
+            box-shadow: 2px 2px 0px black;
+        }
+
+        .screw { position: absolute; width: 10px; height: 10px; background: #7b7b7b; border-radius: 50%; border: 1px solid #444; font-size: 8px; text-align: center; line-height: 8px; color: #444; }
+        .screw::after { content: '+'; }
+        .tl { top: 5px; left: 5px; } .tr { top: 5px; right: 5px; } .bl { bottom: 5px; left: 5px; } .br { bottom: 5px; right: 5px; }
         
-        /* TAPE WINDOW */
-        .window { width: 220px; height: 50px; background: #333; margin-top: 15px; border: 2px inset #555; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; position: relative; }
-        .spool { width: 36px; height: 36px; background: #fff; border: 6px solid #1a1a1a; position: relative; border-radius: 50%; }
-        .spool::after { content: ''; position: absolute; inset: 0; background: conic-gradient(transparent 20%, #888 20% 40%, transparent 40% 60%, #888 60% 80%, transparent 80%); border-radius: 50%; animation: spin 2s linear infinite; animation-play-state: paused; }
-        .playing .spool::after { animation-play-state: running; }
+        /* LABEL (КАССЕТА) */
+        .label { 
+            width: 100%; 
+            height: 140px; 
+            background: #fff; 
+            background-image: repeating-linear-gradient(0deg, #f0f0f0, #f0f0f0 1px, transparent 1px, transparent 3px);
+            border: 2px inset #808080;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            position: relative;
+        }
+
+        .label-top { width: 100%; height: 15px; background: #cc0000; border-bottom: 2px solid black; }
+        
+        .track-info { 
+            margin-top: 10px; 
+            background: #000; 
+            color: #00ff00; /* Ярко-зеленый терминальный цвет */
+            padding: 5px;
+            font-family: 'Courier New', monospace;
+            width: 90%;
+            border: 2px inset #808080;
+            text-shadow: 0 0 3px #00ff00;
+        }
+
+        .title { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; }
+        
+        marquee { width: 100%; font-size: 12px; }
+
+        .window { width: 200px; height: 55px; background: #222; margin-top: 10px; border: 3px inset #808080; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
+        
+        .spool { 
+            width: 40px; height: 40px; 
+            background: #eee; 
+            border: 4px dashed #333; 
+            border-radius: 50%; 
+            position: relative; 
+        }
+        .spool-anim { animation: spin 3s linear infinite; animation-play-state: paused; }
+        .playing .spool-anim { animation-play-state: running; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         
-        /* CONTROLS */
-        .controls { margin-top: 30px; display: flex; gap: 10px; }
-        .btn { width: 70px; height: 50px; background: var(--bg); border: 2px outset; border-color: #dfdfdf #808080 #808080 #dfdfdf; color: var(--text); font-size: 20px; cursor: pointer; font-weight: bold; }
-        .btn:active { border-style: inset; }
-        .play-btn { color: var(--accent); }
-        .playing .play-btn { color: #FF0000; border-color: #808080 #dfdfdf #dfdfdf #808080; border-style: inset; }
+        .controls { margin-top: 15px; display: flex; gap: 5px; }
+        .btn { 
+            background: var(--bg); 
+            border: 2px outset white; 
+            color: var(--text); 
+            font-family: 'MS Sans Serif', sans-serif;
+            font-weight: bold;
+            cursor: pointer; 
+            box-shadow: 1px 1px 0px black;
+        }
+        .btn:active { border: 2px inset white; box-shadow: none; transform: translate(1px, 1px); }
         
-        /* DRAWER & SEARCH */
-        .search-container { margin-top: 25px; width: 300px; }
-        input { width: 100%; background: white; border: 2px inset #808080; padding: 10px; color: var(--text); font-family: inherit; text-align: center; outline: none; }
-        
-        .drawer-btn { margin-top: 15px; padding: 8px 15px; background: var(--bg); border: 2px outset; border-color: #dfdfdf #808080 #808080 #dfdfdf; color: var(--text); font-size: 12px; cursor: pointer; }
-        .drawer-btn:active { border-style: inset; }
+        .status-bar {
+            margin-top: 10px;
+            width: 350px;
+            padding: 2px;
+            font-size: 12px;
+            display: flex;
+            border-left: 2px solid #808080;
+            border-top: 2px solid #808080;
+            border-right: 2px solid white;
+            border-bottom: 2px solid white;
+        }
+        .status-field { flex: 1; padding: 0 5px; border-right: 2px solid #808080; border-bottom: 2px solid #808080; }
+        .status-field:last-child { border-right: none; }
 
-        /* DRAWER OVERLAY */
-        .drawer { position: fixed; inset: 0; background: var(--bg); border: 2px outset; border-color: #dfdfdf #808080 #808080 #dfdfdf; z-index: 100; display: flex; flex-direction: column; transform: translateY(100%); transition: 0.3s ease-out; padding: 10px; }
+        .drawer { position: fixed; inset: 0; background: var(--bg); border: 2px outset white; z-index: 100; display: flex; flex-direction: column; transform: translateY(100%); transition: 0.3s ease-out; padding: 10px; }
         .drawer.open { transform: translateY(0); }
-        .drawer-header { text-align: center; color: var(--text); font-size: 16px; font-weight: bold; margin-bottom: 10px; padding: 5px; background: navy; color: white; }
+        .drawer-header { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 10px; padding: 5px; background: var(--accent); color: white; }
         .drawer-list { flex: 1; overflow-y: auto; background: white; border: 2px inset #808080; padding: 5px; }
         .item { padding: 10px; border-bottom: 1px solid #ccc; cursor: pointer; color: #333; }
         .item:hover { color: white; background: var(--accent); }
-        .close-btn { margin-top: 10px; padding: 10px; background: var(--bg); color: var(--text); border: 2px outset; border-color: #dfdfdf #808080 #808080 #dfdfdf; width: 100%; cursor: pointer; }
+        .close-btn { margin-top: 10px; padding: 10px; background: var(--bg); color: var(--text); border: 2px outset white; width: 100%; cursor: pointer; }
         .close-btn:active { border-style: inset; }
     </style>
 </head>
 <body>
 
+    <div class="window-header">
+        <span><img src="https://win98icons.alexmeub.com/icons/png/cd_player-1.png" width="14" style="vertical-align: middle; margin-right: 3px;"> Aurora_Player_v1.0.exe</span>
+        <div class="win-buttons">
+            <div class="win-btn">_</div>
+            <div class="win-btn">□</div>
+            <div class="win-btn" style="background: #c00; color: white;">X</div>
+        </div>
+    </div>
+
     <div class="deck-container" id="deck">
         <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
+        
+        <img src="https://www.ani-online.com/images/fire.gif" style="position: absolute; left: 10px; bottom: 10px; width: 40px; pointer-events: none;">
+        <img src="https://www.ani-online.com/images/fire.gif" style="position: absolute; right: 10px; bottom: 10px; width: 40px; pointer-events: none;">
+
         <div class="label">
             <div class="label-top"></div>
             <div class="track-info">
-                <div class="title" id="title">AURORA SYSTEM</div>
-                <div class="artist" id="artist">INSERT TAPE</div>
+                <marquee scrollamount="3" id="title">AURORA SYSTEM 1996</marquee>
+                <div style="font-size: 9px; text-align: center;" id="artist">STATUS: IDLE</div>
             </div>
             <div class="window">
-                <div class="spool"></div>
-                <div class="spool"></div>
+                <div class="spool spool-anim"></div>
+                <div class="spool spool-anim"></div>
             </div>
         </div>
+
+        <div class="controls">
+            <button class="btn" onclick="app.prev()">◄◄ PREV</button>
+            <button class="btn" id="playBtn" onclick="app.toggle()" style="color: darkgreen; width: 120px;">► PLAY</button>
+            <button class="btn" onclick="app.next()">NEXT ►►</button>
+        </div>
     </div>
 
-    <div class="controls">
-        <button class="btn" onclick="app.prev()">⏮</button>
-        <button class="btn play-btn" id="playBtn" onclick="app.toggle()">▶</button>
-        <button class="btn" onclick="app.next()">⏭</button>
+    <div class="status-bar">
+        <div class="status-field" id="time">TIME: 00:00</div>
+        <div class="status-field">16-BIT AUDIO</div>
+        <div class="status-field">STATUS: OK</div>
     </div>
 
-    <div class="search-container">
-            <input type="text" id="search" placeholder="SEARCH or ! for AI..." onchange="app.search(this.value)">
-        </div>
-        
-        <button class="drawer-btn" onclick="app.ui.toggleDrawer(true)">☰ OPEN MENU</button>
+    <div style="margin-top: 15px; display: flex; gap: 5px;">
+        <input type="text" id="search" placeholder="Type command & press Enter..." style="width: 220px; background: white; border: 2px inset #808080; padding: 4px; font-family: 'Courier New';" onchange="app.search(this.value)">
+        <button class="btn" onclick="app.ui.toggleDrawer(true)">PLAYLIST</button>
+    </div>
     
-        <div class="drawer" id="drawer">
-            <div class="drawer-header">GENRES & PLAYLIST</div>
-            <div class="drawer-list" id="list"></div>
-            <button class="close-btn" onclick="app.ui.toggleDrawer(false)">CLOSE</button>
-        </div>
-    
-        <script>
-            const app = {
-                state: { p: [], i: 0 },
-                audio: new Audio(),
-                voices: [],
+    <!-- Drawer (Playlist) -->
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">PLAYLIST</div>
+        <div class="drawer-list" id="list"></div>
+        <button class="close-btn" onclick="app.ui.toggleDrawer(false)">CLOSE</button>
+    </div>
+
+    <script>
+        const app = {
+            state: { p: [], i: 0 },
+            audio: new Audio(),
+            voices: [],
+            
+            init() {
+                this.audio.onended = () => this.next();
+                this.audio.onplay = () => this.ui.setPlay(true);
+                this.audio.onpause = () => this.ui.setPlay(false);
+                this.loadGenres();
                 
-                init() {
-                    this.audio.onended = () => this.next();
-                    this.audio.onplay = () => this.ui.setPlay(true);
-                    this.audio.onpause = () => this.ui.setPlay(false);
-                    this.loadGenres();
-                    // Загружаем голоса для синтеза речи
-                    window.speechSynthesis.onvoiceschanged = () => {
-                        this.voices = window.speechSynthesis.getVoices();
-                    };
-                },
-    
-                search(q) {
-                    if(!q) return;
-                    // Если запрос начинается с "!", это команда для AI
-                    if (q.startsWith('!')) {
-                        this.askAI(q.substring(1).trim());
+                window.speechSynthesis.onvoiceschanged = () => {
+                    this.voices = window.speechSynthesis.getVoices();
+                };
+
+                this.audio.ontimeupdate = () => {
+                    const timeEl = document.getElementById('time');
+                    if (timeEl) {
+                        const cur = Math.floor(this.audio.currentTime);
+                        const dur = Math.floor(this.audio.duration);
+                        if (!isNaN(cur) && !isNaN(dur) && dur > 0) {
+                            const f = s => String(s % 60).padStart(2, '0');
+                            timeEl.innerText = `TIME: ${String(Math.floor(cur/60)).padStart(2,'0')}:${f(cur)} / ${String(Math.floor(dur/60)).padStart(2,'0')}:${f(dur)}`;
+                        } else {
+                            timeEl.innerText = 'TIME: --:--';
+                        }
+                    }
+                };
+            },
+
+            search(q) {
+                if(!q) return;
+                if (q.startsWith('!')) {
+                    this.askAI(q.substring(1).trim());
+                } else {
+                    this.searchPlaylist(q);
+                }
+                document.getElementById('search').value = '';
+            },
+            
+            async searchPlaylist(q) {
+                document.getElementById('title').innerText = "SEARCHING...";
+                document.getElementById('artist').innerText = "Connecting to Satellite...";
+                try {
+                    const res = await fetch(`/api/player/playlist?query=${encodeURIComponent(q)}`);
+                    const data = await res.json();
+                    if(data.playlist?.length) {
+                        this.state.p = data.playlist;
+                        this.play(0);
+                        this.ui.renderPlaylist();
                     } else {
-                        this.searchPlaylist(q);
+                        document.getElementById('title').innerText = ">>> NO SIGNAL <<<";
+                        document.getElementById('artist').innerText = "Check query and try again";
+                    }
+                } catch(e) { 
+                    console.error(e);
+                    document.getElementById('title').innerText = "ERROR 404"; 
+                }
+            },
+
+            async askAI(q) {
+                document.getElementById('title').innerText = "DIALING UP TO A.I. ...";
+                document.getElementById('artist').innerText = "Please wait.";
+                try {
+                    const res = await fetch(`/api/ai/chat`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: q })
+                    });
+                    const data = await res.json();
+                    if(data.response) {
+                        document.getElementById('title').innerText = "A.I. SAYS:";
+                        document.getElementById('artist').innerText = data.response;
+                        this.speak(data.response);
+                    } else {
+                         document.getElementById('title').innerText = "A.I. is offline...";
+                    }
+                } catch(e) {
+                    console.error(e);
+                    document.getElementById('title').innerText = "A.I. CONNECTION FAILED";
+                }
+            },
+
+            speak(text) {
+                if (!window.speechSynthesis) return;
+                const utterance = new SpeechSynthesisUtterance(text);
+                const ruVoice = this.voices.find(v => v.lang.startsWith('ru'));
+                if (ruVoice) utterance.voice = ruVoice;
+                utterance.rate = 1.1;
+                utterance.pitch = 1.0;
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+            },
+
+            play(i) {
+                if(!this.state.p[i]) return;
+                this.state.i = i;
+                const t = this.state.p[i];
+                document.getElementById('title').innerText = t.title;
+                document.getElementById('artist').innerText = t.artist;
+                this.audio.src = `/stream/${t.identifier}`;
+                this.audio.play();
+            },
+
+            toggle() { this.audio.paused ? this.audio.play() : this.audio.pause(); },
+            next() { this.play((this.state.i + 1) % this.state.p.length); },
+            prev() { this.play((this.state.i - 1 + this.state.p.length) % this.state.p.length); },
+
+            ui: {
+                setPlay(s) {
+                    document.getElementById('deck').classList.toggle('playing', s);
+                    document.getElementById('playBtn').innerHTML = s ? '■ STOP' : '► PLAY';
+                    if(s) {
+                        document.getElementById('playBtn').style.color = 'red';
+                    } else {
+                        document.getElementById('playBtn').style.color = 'darkgreen';
                     }
                 },
-                
-                async searchPlaylist(q) {
-                    document.getElementById('title').innerText = "SEARCHING...";
-                    document.getElementById('artist').innerText = "PLAYLIST";
-                    try {
-                        const res = await fetch(`/api/player/playlist?query=${encodeURIComponent(q)}`);
-                        const data = await res.json();
-                        if(data.playlist?.length) {
-                            this.state.p = data.playlist;
-                            this.play(0);
-                            this.ui.renderPlaylist();
-                        } else {
-                            document.getElementById('title').innerText = "NOT FOUND";
-                        }
-                    } catch(e) { 
-                        console.error(e);
-                        document.getElementById('title').innerText = "ERROR"; 
-                    }
+                toggleDrawer(s) {
+                    document.getElementById('drawer').classList.toggle('open', s);
                 },
-    
-                async askAI(q) {
-                    document.getElementById('title').innerText = "ASKING AI...";
-                    document.getElementById('artist').innerText = "AURORA DJ";
-                    try {
-                        const res = await fetch(`/api/ai/dj`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ prompt: q })
-                        });
-                        const data = await res.json();
-                        if(data.response) {
-                            document.getElementById('title').innerText = "AI SAYS:";
-                            document.getElementById('artist').innerText = data.response;
-                            this.speak(data.response);
-                        } else {
-                             document.getElementById('title').innerText = "AI is silent...";
-                        }
-                    } catch(e) {
-                        console.error(e);
-                        document.getElementById('title').innerText = "AI ERROR";
-                    }
-                },
-    
-                speak(text) {
-                    if (!window.speechSynthesis) return;
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    // Попытка найти русский голос
-                    const ruVoice = this.voices.find(v => v.lang.startsWith('ru'));
-                    if (ruVoice) {
-                        utterance.voice = ruVoice;
-                    }
-                    utterance.rate = 1.1;
-                    utterance.pitch = 1.0;
-                    window.speechSynthesis.cancel(); // Отменяем предыдущие, если есть
-                    window.speechSynthesis.speak(utterance);
-                },
-    
-                play(i) {
-                    if(!this.state.p[i]) return;
-                    this.state.i = i;
-                    const t = this.state.p[i];
-                    document.getElementById('title').innerText = t.title;
-                    document.getElementById('artist').innerText = t.artist;
-                    this.audio.src = `/stream/${t.identifier}`;
-                    this.audio.play();
-                },
-    
-                toggle() { this.audio.paused ? this.audio.play() : this.audio.pause(); },
-                next() { this.play((this.state.i + 1) % this.state.p.length); },
-                prev() { this.play((this.state.i - 1 + this.state.p.length) % this.state.p.length); },
-    
-                ui: {
-                    setPlay(s) {
-                        document.getElementById('deck').classList.toggle('playing', s);
-                        document.getElementById('playBtn').innerText = s ? '⏸' : '▶';
-                    },
-                    toggleDrawer(s) {
-                        document.getElementById('drawer').classList.toggle('open', s);
-                    },
-                    renderPlaylist() {
-                        const l = document.getElementById('list');
-                        l.innerHTML = '';
-                        app.state.p.forEach((t, i) => {
-                            let d = document.createElement('div');
-                            d.className = 'item';
-                            d.innerText = `${i+1}. ${t.title}`;
-                            d.onclick = () => { app.play(i); app.ui.toggleDrawer(false); };
-                            l.appendChild(d);
-                        });
-                    }
-                },
-    
-                loadGenres() {
-                    const genres = {
-                        "🎸 Rock Hits": "rock hits",
-                        "🎤 Hip-Hop": "hip hop hits",
-                        "🕺 Pop 2024": "pop hits 2024",
-                        "🏎 Phonk": "phonk drift",
-                        "💤 Chill": "lofi hip hop"
-                    };
+                renderPlaylist() {
                     const l = document.getElementById('list');
-                    for(let [k,v] of Object.entries(genres)) {
+                    l.innerHTML = '';
+                    app.state.p.forEach((t, i) => {
                         let d = document.createElement('div');
                         d.className = 'item';
-                        d.innerText = k;
-                        d.onclick = () => { app.searchPlaylist(v); app.ui.toggleDrawer(false); };
+                        d.innerText = `${i+1}. ${t.title} - ${t.artist}`;
+                        d.onclick = () => { app.play(i); app.ui.toggleDrawer(false); };
                         l.appendChild(d);
-                    }
+                    });
                 }
-            };
-            window.onload = () => app.init();
-        </script></body>
+            },
+
+            loadGenres() {
+                const genres = {
+                    "Pop Hits": "pop hits 2024",
+                    "Russian Gold": "русские хиты 90х",
+                    "Rock Classics": "rock classics hits",
+                    "Phonk / Drift": "phonk drift",
+                    "Lofi / Study": "lofi hip hop"
+                };
+                const l = document.getElementById('list');
+                l.innerHTML = ''; // Clear list before adding genres
+                for(let [k,v] of Object.entries(genres)) {
+                    let d = document.createElement('div');
+                    d.className = 'item';
+                    d.innerHTML = `► ${k}`;
+                    d.onclick = () => { this.searchPlaylist(v); this.ui.toggleDrawer(false); };
+                    l.appendChild(d);
+                }
+            }
+        };
+        window.onload = () => app.init();
+    </script>
+</body>
 </html>
