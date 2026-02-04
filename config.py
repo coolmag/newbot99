@@ -57,3 +57,16 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     return Settings()
+
+RADIO_PRESETS = [
+    "best pop hits 2024",
+    "русские хиты новинки",
+    "deep house relax",
+    "rock classics hits",
+    "lo-fi hip hop study",
+    "энергичная музыка для тренировок",
+    "вечерний джаз",
+    "phonk playlist",
+    "synthwave retrowave",
+    "дискотека 90-х русская"
+]

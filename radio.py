@@ -2,12 +2,13 @@ import asyncio
 import logging
 import random
 import os
+import time
 from typing import List, Optional, Dict, Set
 from dataclasses import dataclass, field
 from telegram import Bot, Message, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.constants import ParseMode, ChatType
 from telegram.error import BadRequest, RetryAfter, Forbidden
-from config import Settings
+from config import Settings, RADIO_PRESETS
 from models import TrackInfo, DownloadResult
 from youtube import YouTubeDownloader
 import json
@@ -47,10 +48,12 @@ class RadioSession:
     skip_event: asyncio.Event = field(default_factory=asyncio.Event)
     status_message: Optional[Message] = None
     _is_searching: bool = field(init=False, default=False)
+    last_wave_change_time: float = field(init=False, default=0.0)
     
     async def start(self):
         if self.is_running: return
         self.is_running = True
+        self.last_wave_change_time = time.time() # Сбрасываем таймер
         self.current_task = asyncio.create_task(self._radio_loop())
         logger.info(f"[{self.chat_id}] 🚀 Эфир запущен: '{self.query}'")
 
@@ -154,25 +157,33 @@ class RadioSession:
     async def _radio_loop(self):
         while self.is_running:
             try:
+                # --- ЛОГИКА АВТО-СМЕНЫ ВОЛНЫ ---
+                if time.time() - self.last_wave_change_time > 3600:
+                    new_wave = random.choice([w for w in RADIO_PRESETS if w != self.query])
+                    self.query = new_wave
+                    self.display_name = new_wave
+                    self.last_wave_change_time = time.time()
+                    self.played_ids.clear()
+                    self.playlist.clear()
+                    
+                    await self.bot.send_message(self.chat_id, f"🔄 Час прошел! Авто-смена пластинки.\n📡 Новая волна: {self.query} 💽")
+                # -------------------------------
+
                 if len(self.playlist) < 3: await self._fill_playlist()
                 
                 if not self.playlist:
                     await self._update_status("📡 Поиск новой музыки...")
                     await asyncio.sleep(5)
-                    # Если совсем пусто, пробуем еще раз (fill_playlist сам сбросит историю)
                     await self._fill_playlist()
-                    if not self.playlist: # If still empty after reset, wait longer before trying again
+                    if not self.playlist:
                         await self._update_status("🔍 Не удалось найти новую музыку. Повтор старой или ожидание...")
                         await asyncio.sleep(10)
                         continue
 
-
                 track = self.playlist.pop(0)
                 self.played_ids.add(track.identifier)
                 
-                # Защита от переполнения памяти сета
-                if len(self.played_ids) > 500: 
-                    # Очищаем половину самых старых записей
+                if len(self.played_ids) > 500:
                     self.played_ids = set(list(self.played_ids)[250:])
 
                 success = await self._play_track(track)

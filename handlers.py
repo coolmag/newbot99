@@ -62,31 +62,14 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # 2. AI Анализ
-    intent = "chat"
-    query = text
+    analysis = await analyze_message(text)
+    intent = analysis['intent']
+    query = analysis['query']
     
-    try:
-        # !!! ВОТ ЗДЕСЬ БЫЛА ОШИБКА РАСПАКОВКИ !!!
-        # Мы теперь берем данные явно по ключам
-        analysis = await analyze_message(text)
-        if isinstance(analysis, dict):
-            intent = analysis.get("intent", "chat")
-            query = analysis.get("query")
-            # Если query пришел пустым от ИИ, ставим исходный текст
-            if not query: query = text
-            
-        logger.info(f"[{chat_id}] AI DECISION: Intent='{intent}' | Query='{query}'")
-    except Exception as e:
-        logger.error(f"NLP Fail: {e}")
+    logger.info(f"🤖 AI Decided: {intent} -> {query}")
 
     # 3. Маршрутизация
-    if intent == 'radio':
-        await _do_radio(chat_id, query, context)
-        
-    elif intent == 'search':
-        await _do_play(chat_id, query, context)
-        
-    else:
+    if intent == 'chat':
         # Чат: берем режим из context.chat_data (Best Practice 2026)
         mode = context.chat_data.get("mode", "default")
         user = update.effective_user.first_name
@@ -97,6 +80,20 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Генерация ответа
         response = await ChatManager.get_response(text, user, mode)
         await update.message.reply_text(response)
+
+    elif intent == 'search':
+        await _do_play(chat_id, query, context)
+        
+    elif intent == 'radio':
+        # --- НОВАЯ ЛОГИКА ДЛЯ РАДИО ---
+        await update.message.reply_text(f"📻 Ловлю волну: {query}...")
+        
+        # Здесь нужно вызвать твою функцию запуска радио.
+        # Обычно это работает через подмену аргументов контекста:
+        context.args = [query] # Имитируем, будто юзер написал "/radio query"
+        
+        # Вызываем функцию, которая у тебя привязана к команде /radio
+        await radio_command(update, context)
 
 # --- КОМАНДЫ ---
 
