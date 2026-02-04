@@ -30,7 +30,7 @@ def get_now_playing_message(track: TrackInfo, genre_name: str) -> str:
     artist = track.uploader[:30].strip()
     return f"{icon} *{title}*\n👤 {artist}\n⏱ {format_duration(track.duration)} | 📻 _{genre_name}_"
 
- @dataclass
+@dataclass
 class RadioSession:
     chat_id: int
     bot: Bot
