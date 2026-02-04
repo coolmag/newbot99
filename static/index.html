@@ -47,7 +47,8 @@
 
     <div id="drw" class="drawer">
         <div class="title-bar"><span>AI SEARCH</span><span onclick="toggleL()" style="cursor:pointer">✕</span></div>
-        <input type="text" id="srch" class="search-box" placeholder="Найти станцию..." oninput="renderList()">
+        <!-- Убедитесь, что здесь прописан oninput="renderList()" -->
+        <input type="text" id="srch" class="search-box" placeholder="Найти станцию..." oninput="handleSearchInput()">
         <div id="lst" class="list"></div>
     </div>
 </div>
@@ -70,13 +71,12 @@
           drw = document.getElementById('drw'), lst = document.getElementById('lst'),
           si = document.getElementById('srch'), pb = document.getElementById('pb');
 
-    // Озвучка
     function speak(text) {
         if (!window.speechSynthesis) return;
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
         u.lang = 'ru-RU';
-        u.rate = 1.1; // Чуть быстрее для эффекта ИИ
+        u.rate = 1.1;
         window.speechSynthesis.speak(u);
     }
 
@@ -88,10 +88,7 @@
         const t = tracks[cur];
         m.innerText = `${t.e} ${t.n}`;
         st.innerText = "SIRIUS AI: CONNECTING...";
-        
-        // Голосовой ответ
         speak("Включаю " + t.n);
-
         a.src = `https://stream.example.com/${t.q}`;
         a.play().then(() => {
             st.innerText = "SIRIUS AI: ONLINE";
@@ -102,13 +99,18 @@
 
     function toggle() {
         if(!a.src) return play(0);
-        if(a.paused) { a.play(); st.innerText="PLAYING"; pb.innerText="⏸"; speak("Продолжаю воспроизведение"); }
-        else { a.pause(); st.innerText="PAUSED"; pb.innerText="▶"; speak("Пауза"); }
+        a.paused ? (a.play(), st.innerText="PLAYING", pb.innerText="⏸", speak("Продолжаю")) : (a.pause(), st.innerText="PAUSED", pb.innerText="▶", speak("Пауза"));
     }
 
     function next() { play((cur + 1) % tracks.length); }
     function prev() { play((cur - 1 + tracks.length) % tracks.length); }
     function toggleL() { drw.classList.toggle('open'); if(drw.classList.contains('open')) { si.focus(); speak("Плейлист открыт"); } }
+
+    // --- Функция поиска ---
+    function handleSearchInput() {
+        speak("Ищу");
+        renderList();
+    }
 
     function renderList() {
         const f = si.value.toLowerCase();
@@ -123,6 +125,7 @@
             }
         });
     }
+    // ---------------------
 
     setInterval(() => {
         bars.forEach(b => b.style.height = !a.paused ? (Math.random()*80+20)+'%' : '15%');
