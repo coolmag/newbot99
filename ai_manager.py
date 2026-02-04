@@ -1,6 +1,5 @@
 import logging
 import json
-import asyncio
 import re
 import google.generativeai as genai
 from typing import Optional, Dict
@@ -9,28 +8,19 @@ from config import get_settings
 
 logger = logging.getLogger("ai_manager")
 
-# ВАЖНО: Gemma требует настройки генерации, иначе может выдавать пустые ответы
-# Этот импорт был причиной предыдущих падений, теперь он на месте.
 try:
     from google.generativeai.types import GenerationConfig
 except ImportError:
-    # Фоллбэк для разных версий, если types не существует
     GenerationConfig = genai.GenerationConfig
 
-# Промпт, задающий личность Авроры
 AURORA_SYSTEM_PROMPT = """
 Ты — Аврора, ИИ-диджей в Телеграм-боте.
 Твой стиль: дерзкая, веселая, используешь эмодзи (🎧, 🛸, 🎸).
 Ты не ассистент, ты — фанатка музыки.
-Отвечай кратко (до 2 предложений), если не просят длинно.
+Отвечай кратко (до 2 предложений).
 """
 
 class AIManager:
-    """
-    🧠 AI Manager (Gemma "Jailbreak" Edition).
-    Применен обходной путь для注入личности в Gemma через историю чата.
-    """
-    
     def __init__(self):
         self.is_active = False
         settings = get_settings()
@@ -39,135 +29,67 @@ class AIManager:
         if api_key:
             try:
                 genai.configure(api_key=api_key)
-                # Инициализируем модель "чистой", без system_instruction, чтобы избежать ошибки 400
-                self.model = genai.GenerativeModel('gemma-3-12b-it') 
+                # Используем стандартную модель, без изысков
+                self.model = genai.GenerativeModel('gemini-2.0-flash') 
                 self.is_active = True
-                logger.info("✅ Google GenAI configured successfully (Gemma 3).")
+                logger.info("✅ Gemini AI activated.")
             except Exception as e:
-                logger.error(f"❌ Failed to configure Google GenAI: {e}")
+                logger.error(f"❌ Gemini config failed: {e}")
         else:
-            logger.warning("⚠️ GOOGLE_API_KEY is missing!")
+            logger.warning("⚠️ GOOGLE_API_KEY missing.")
 
     async def analyze_message(self, text: str) -> Dict:
-        if not self.is_active:
-            logger.warning("[NLP] AI is not active, using regex fallback.")
-            return self._regex_fallback(text)
+        if not self.is_active: return self._regex_fallback(text)
             
         try:
-            # Промпт v4: Разделение на Search (Трек) и Radio (Поток)
             prompt = f"""
-            Ты — мозг музыкального бота. Твоя задача — классифицировать запрос юзера.
+            Classify intent:
+            1. 'search' (specific song/artist)
+            2. 'radio' (genre/mood/vibe/mix/hits)
+            3. 'chat' (general conversation)
             
-            ДОСТУПНЫЕ ИНТЕНТЫ:
-            1. INTENT: search
-               Использовать ТОЛЬКО если юзер называет КОНКРЕТНОГО исполнителя или название песни.
-               Пример: "Включи Linkin Park", "Поставь Numb", "Скриптонит", "Eminem".
-               
-            2. INTENT: radio
-               Использовать, если юзер просит:
-               - Жанр (рок, поп, рэп, джаз)
-               - Настроение (веселое, грустное, для сна, драйвовое, расслабиться)
-               - Подборку ("хиты", "новинки", "топ чарт", "русские хиты")
-               - Абстрактное ("включи что-то", "хочу музыки", "волну", "посоветуй", "наяривай")
-               
-            3. INTENT: chat
-               Только для "Привет", "Как дела", "Кто ты" и болтовни не о музыке.
+            Format: INTENT: <intent> | QUERY: <query>
             
-            ФОРМАТ ОТВЕТА (Строго одна строка):
-            INTENT: <intent> | QUERY: <поисковый запрос>
-            
-            Примеры:
-            User: "Привет" -> INTENT: chat | QUERY: Привет
-            User: "Linkin Park Numb" -> INTENT: search | QUERY: Linkin Park Numb
-            User: "Включи трек Федерико Феллини" -> INTENT: search | QUERY: Galibri & Mavik Федерико Феллини
-            
-            User: "Хочу что-то веселое" -> INTENT: radio | QUERY: веселая танцевальная музыка
-            User: "Врубай рок" -> INTENT: radio | QUERY: best rock music mix
-            User: "Русские хиты" -> INTENT: radio | QUERY: русские хиты новинки
-            User: "Включи волну попсы" -> INTENT: radio | QUERY: pop music hits
-            User: "Для сна" -> INTENT: radio | QUERY: ambient sleep music
-            
-            User input: "{text}"
-            Answer:
+            Input: "{text}"
             """
-
-            # Используем основную модель класса
+            
             response = await self.model.generate_content_async(
                 prompt,
-                generation_config=genai.GenerationConfig(temperature=0.1)
+                generation_config=GenerationConfig(temperature=0.1)
             )
+            raw = response.text.strip()
             
-            raw_text = response.text.strip()
-            logger.info(f"[NLP] Raw AI response: {raw_text}")
-
-            # Парсинг
             intent = "chat"
             query = text
-
-            if "INTENT:" in raw_text:
-                if "INTENT: search" in raw_text: intent = "search"
-                elif "INTENT: radio" in raw_text: intent = "radio"
-                elif "INTENT: chat" in raw_text: intent = "chat"
+            if "INTENT:" in raw:
+                if "search" in raw: intent = "search"
+                elif "radio" in raw: intent = "radio"
                 
-                if "| QUERY:" in raw_text:
-                    query = raw_text.split("| QUERY:")[1].strip()
+                if "| QUERY:" in raw:
+                    query = raw.split("| QUERY:")[1].strip()
             
             return {"intent": intent, "query": query}
 
         except Exception as e:
-            logger.warning(f"[NLP] Error: {e}, using regex fallback.")
+            logger.warning(f"[AI] Error: {e}")
             return self._regex_fallback(text)
 
     async def get_chat_response(self, user_text: str, system_prompt: str = "") -> str:
-        if not self.is_active: return "Мозг отключен 🔌"
-
-        # Используем основной системный промпт, если не передан кастомный
-        final_system_prompt = system_prompt or AURORA_SYSTEM_PROMPT
-
+        if not self.is_active: return "Мозг оффлайн 🔌"
+        
+        sp = system_prompt or AURORA_SYSTEM_PROMPT
         try:
-            # Создаем чат с "фейковой" историей (Jailbreak личности для Gemma)
             chat = self.model.start_chat(history=[
-                {
-                    "role": "user",
-                    "parts": [final_system_prompt + "\n\nТы поняла свою роль?"]
-                },
-                {
-                    "role": "model",
-                    "parts": ["Конечно! Я Аврора, твой музыкальный пилот! Погнали! 🎧🛸"]
-                }
+                {"role": "user", "parts": [sp + "\nHi!"]},
+                {"role": "model", "parts": ["Привет! Я готова! 🎧"]}
             ])
-            
-            # Отправляем реальное сообщение
             response = await chat.send_message_async(user_text)
             return response.text
-            
-        except Exception as e:
-            # Логируем точную ошибку
-            logger.error(f"CRITICAL AI ERROR: {e}")
-            return "Антенна погнулась... 🛸 (Сбой нейросети)"
+        except Exception:
+            return "Помехи в эфире... 🛸"
 
     def _regex_fallback(self, text: str) -> Dict:
-        # ... (regex fallback остался без изменений)
-        text_lower = text.lower()
-        radio_keywords = ['радио', 'radio', 'play', 'играй', 'включи', 'mix', 'поток', 'вайб']
-        chat_keywords = ['привет', 'как дела', 'кто ты', 'расскажи', 'аврора']
-
-        if any(k in text_lower for k in chat_keywords):
-             return {"intent": "chat", "query": text}
-
-        if any(k in text_lower for k in radio_keywords):
-            for k in radio_keywords: text_lower = text_lower.replace(k, '')
-            return {"intent": "radio", "query": text_lower.strip() or "top hits"}
-            
+        t = text.lower()
+        if any(x in t for x in ['привет', 'аврора', 'как дела']): return {"intent": "chat", "query": text}
+        if any(x in t for x in ['radio', 'радио', 'mix', 'play']): return {"intent": "radio", "query": text}
         return {"intent": "search", "query": text}
-
-    def _parse_json(self, text: str) -> Optional[Dict]:
-        # ... (json parser остался без изменений)
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            match = re.search(r"\{.*\}", text, re.DOTALL)
-            if match:
-                try: return json.loads(match.group(0))
-                except: return None
-            return None

@@ -10,9 +10,5 @@ httpx>=0.24.0
 ytmusicapi>=1.0.0
 psutil
 nest-asyncio
-beautifulsoup4
 spotipy
 ffmpeg-python
-brotli
-pycryptodomex
-
