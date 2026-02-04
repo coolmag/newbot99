@@ -2,357 +2,250 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aurora Player 1996 GOLD Edition</title>
+    <title>Aurora 1996</title>
     <style>
-        /* РЕТРО-ШРИФТ И ОБЩИЙ СТИЛЬ */
-        :root { 
-            --bg: #c0c0c0; /* Тот самый серый Windows 95 */
-            --text: black; 
-            --accent: #000080; /* Темно-синий заголовок */
-        }
+        :root { --bg: #c0c0c0; --win-blue: #000080; }
+        body { background: #008080; font-family: sans-serif; font-size: 12px; display: flex; flex-direction: column; align-items: center; margin: 20px; user-select: none; }
         
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; image-rendering: pixelated; }
+        .window { background: var(--bg); border: 2px solid; border-color: #fff #808080 #808080 #fff; width: 320px; padding: 3px; box-shadow: 1px 1px 0 #000; }
+        .title-bar { background: linear-gradient(90deg, var(--win-blue), #1084d0); color: white; padding: 3px 5px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         
-        body { 
-            margin: 0; 
-            background-color: #008080; /* Классический бирюзовый фон рабочего стола */
-            background-image: url('https://i.gifer.com/origin/c8/c88c79215835a4d785a2e88a38a221c5_w200.gif'); /* Эффект старого монитора */
-            color: var(--text); 
-            font-family: 'MS Sans Serif', 'Tahoma', sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            height: 100vh; 
-            overflow: hidden; 
-            user-select: none;
-        }
+        .deck { border: 2px inset #fff; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .label { background: #f0f0f0; width: 100%; border: 1px solid #555; padding: 5px; position: relative; }
+        .screen { background: #000; color: #0f0; font-family: monospace; padding: 5px; height: 50px; overflow: hidden; border: 2px inset #808080; }
+        
+        canvas { width: 100%; height: 28px; background: #000; display: block; }
 
-        /* ЗАГОЛОВОК ОКНА (В СТИЛЕ WIN95) */
-        .window-header {
-            width: 350px;
-            background: linear-gradient(90deg, #000080, #1084d0);
-            color: white;
-            padding: 3px 6px;
-            font-weight: bold;
-            font-size: 13px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-        }
+        .reels { display: flex; justify-content: center; gap: 40px; margin: 10px 0; }
+        .spool { width: 30px; height: 30px; border: 3px dashed #333; border-radius: 50%; background: #fff; }
+        .playing .spool { animation: r 2s linear infinite; }
+        @keyframes r { 100% { transform: rotate(360deg); } }
 
-        .win-buttons { display: flex; gap: 2px; }
-        .win-btn { width: 16px; height: 14px; background: var(--bg); border: 1px outset white; font-size: 9px; display: flex; align-items: center; justify-content: center; color: black; box-shadow: 1px 1px 0 black; }
-
-        /* DECK (ОСНОВНОЙ КОРПУС) */
-        .deck-container { 
-            position: relative; 
-            width: 350px; 
-            background: var(--bg); 
-            border-left: 2px solid white;
-            border-top: 2px solid white;
-            border-right: 2px solid black;
-            border-bottom: 2px solid black;
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 10px; 
-            box-shadow: 2px 2px 0px black;
-        }
-
-        .screw { position: absolute; width: 10px; height: 10px; background: #7b7b7b; border-radius: 50%; border: 1px solid #444; font-size: 8px; text-align: center; line-height: 8px; color: #444; }
-        .screw::after { content: '+'; }
-        .tl { top: 5px; left: 5px; } .tr { top: 5px; right: 5px; } .bl { bottom: 5px; left: 5px; } .br { bottom: 5px; right: 5px; }
+        .btn { background: var(--bg); border: 2px outset #fff; padding: 4px 8px; cursor: pointer; font-family: sans-serif; font-size: 11px; }
+        .btn:active { border-style: inset; padding: 5px 7px 3px 9px; }
         
-        /* LABEL (КАССЕТА) */
-        .label { 
-            width: 100%; 
-            height: 140px; 
-            background: #fff; 
-            background-image: repeating-linear-gradient(0deg, #f0f0f0, #f0f0f0 1px, transparent 1px, transparent 3px);
-            border: 2px inset #808080;
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            position: relative;
-        }
-
-        .label-top { width: 100%; height: 15px; background: #cc0000; border-bottom: 2px solid black; }
-        
-        .track-info { 
-            margin-top: 10px; 
-            background: #000; 
-            color: #00ff00; /* Ярко-зеленый терминальный цвет */
-            padding: 5px;
-            font-family: 'Courier New', monospace;
-            width: 90%;
-            border: 2px inset #808080;
-            text-shadow: 0 0 3px #00ff00;
-        }
-
-        .title { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; }
-        
-        marquee { width: 100%; font-size: 12px; }
-
-        .window { width: 200px; height: 55px; background: #222; margin-top: 10px; border: 3px inset #808080; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
-        
-        .spool { 
-            width: 40px; height: 40px; 
-            background: #eee; 
-            border: 4px dashed #333; 
-            border-radius: 50%; 
-            position: relative; 
-        }
-        .spool-anim { animation: spin 3s linear infinite; animation-play-state: paused; }
-        .playing .spool-anim { animation-play-state: running; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        
-        .controls { margin-top: 15px; display: flex; gap: 5px; }
-        .btn { 
-            background: var(--bg); 
-            border: 2px outset white; 
-            color: var(--text); 
-            font-family: 'MS Sans Serif', sans-serif;
-            font-weight: bold;
-            cursor: pointer; 
-            box-shadow: 1px 1px 0px black;
-        }
-        .btn:active { border: 2px inset white; box-shadow: none; transform: translate(1px, 1px); }
-        
-        .status-bar {
-            margin-top: 10px;
-            width: 350px;
-            padding: 2px;
-            font-size: 12px;
-            display: flex;
-            border-left: 2px solid #808080;
-            border-top: 2px solid #808080;
-            border-right: 2px solid white;
-            border-bottom: 2px solid white;
-        }
-        .status-field { flex: 1; padding: 0 5px; border-right: 2px solid #808080; border-bottom: 2px solid #808080; }
-        .status-field:last-child { border-right: none; }
+        input { border: 2px inset #fff; padding: 3px; width: 140px; outline: none; }
+        marquee { font-size: 14px; font-weight: bold; height: 16px; }
 
         .drawer { position: fixed; inset: 0; background: var(--bg); border: 2px outset white; z-index: 100; display: flex; flex-direction: column; transform: translateY(100%); transition: 0.3s ease-out; padding: 10px; }
         .drawer.open { transform: translateY(0); }
-        .drawer-header { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 10px; padding: 5px; background: var(--accent); color: white; }
+        .drawer-header { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 10px; padding: 5px; background: var(--win-blue); color: white; }
         .drawer-list { flex: 1; overflow-y: auto; background: white; border: 2px inset #808080; padding: 5px; }
         .item { padding: 10px; border-bottom: 1px solid #ccc; cursor: pointer; color: #333; }
-        .item:hover { color: white; background: var(--accent); }
+        .item:hover { color: white; background: var(--win-blue); }
         .close-btn { margin-top: 10px; padding: 10px; background: var(--bg); color: var(--text); border: 2px outset white; width: 100%; cursor: pointer; }
         .close-btn:active { border-style: inset; }
     </style>
 </head>
 <body>
 
-    <div class="window-header">
-        <span><img src="https://win98icons.alexmeub.com/icons/png/cd_player-1.png" width="14" style="vertical-align: middle; margin-right: 3px;"> Aurora_Player_v1.0.exe</span>
-        <div class="win-buttons">
-            <div class="win-btn">_</div>
-            <div class="win-btn">□</div>
-            <div class="win-btn" style="background: #c00; color: white;">X</div>
-        </div>
-    </div>
-
-    <div class="deck-container" id="deck">
-        <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
-        
-        <img src="https://www.ani-online.com/images/fire.gif" style="position: absolute; left: 10px; bottom: 10px; width: 40px; pointer-events: none;">
-        <img src="https://www.ani-online.com/images/fire.gif" style="position: absolute; right: 10px; bottom: 10px; width: 40px; pointer-events: none;">
-
-        <div class="label">
-            <div class="label-top"></div>
-            <div class="track-info">
-                <marquee scrollamount="3" id="title">AURORA SYSTEM 1996</marquee>
-                <div style="font-size: 9px; text-align: center;" id="artist">STATUS: IDLE</div>
-            </div>
-            <div class="window">
-                <div class="spool spool-anim"></div>
-                <div class="spool spool-anim"></div>
-            </div>
-        </div>
-
-        <div class="controls">
-            <button class="btn" onclick="app.prev()">◄◄ PREV</button>
-            <button class="btn" id="playBtn" onclick="app.toggle()" style="color: darkgreen; width: 120px;">► PLAY</button>
-            <button class="btn" onclick="app.next()">NEXT ►►</button>
-        </div>
-    </div>
-
-    <div class="status-bar">
-        <div class="status-field" id="time">TIME: 00:00</div>
-        <div class="status-field">16-BIT AUDIO</div>
-        <div class="status-field">STATUS: OK</div>
-    </div>
-
-    <div style="margin-top: 15px; display: flex; gap: 5px;">
-        <input type="text" id="search" placeholder="Type command & press Enter..." style="width: 220px; background: white; border: 2px inset #808080; padding: 4px; font-family: 'Courier New';" onchange="app.search(this.value)">
-        <button class="btn" onclick="app.ui.toggleDrawer(true)">PLAYLIST</button>
+<div class="window">
+    <div class="title-bar">
+        <span>Aurora_Player.exe</span>
+        <span>✕</span>
     </div>
     
-    <!-- Drawer (Playlist) -->
-    <div class="drawer" id="drawer">
-        <div class="drawer-header">PLAYLIST</div>
-        <div class="drawer-list" id="list"></div>
-        <button class="close-btn" onclick="app.ui.toggleDrawer(false)">CLOSE</button>
+    <div class="deck" id="playerNode">
+        <div class="label">
+            <div class="screen">
+                <marquee id="title">READY TO PLAY...</marquee>
+                <canvas id="v"></canvas>
+            </div>
+            <div class="reels">
+                <div class="spool"></div>
+                <div class="spool"></div>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:5px">
+            <button class="btn" onclick="app.prev()">PREV</button>
+            <button class="btn" id="playBtn" onclick="initAudio(); app.toggle()">PLAY</button>
+            <button class="btn" onclick="app.next()">NEXT</button>
+        </div>
+
+        <div style="display:flex; gap:5px; align-items:center; margin-top: 5px;">
+            <input id="search" placeholder="!ai or search..." onchange="app.search(this.value)">
+            <button class="btn" onclick="app.ui.toggleDrawer(true)">LIST</button>
+        </div>
     </div>
+</div>
 
-    <script>
-        const app = {
-            state: { p: [], i: 0 },
-            audio: new Audio(),
-            voices: [],
+<!-- Drawer (Playlist) -->
+<div class="drawer" id="drawer">
+    <div class="drawer-header">PLAYLIST</div>
+    <div class="drawer-list" id="list"></div>
+    <button class="close-btn" onclick="app.ui.toggleDrawer(false)">CLOSE</button>
+</div>
+
+<script>
+    let ctx, anal, data;
+    function initAudio() {
+        if (ctx) return;
+        try {
+            ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const src = ctx.createMediaElementSource(app.audio);
+            anal = ctx.createAnalyser();
+            src.connect(anal);
+            anal.connect(ctx.destination);
+            anal.fftSize = 32;
+            data = new Uint8Array(anal.frequencyBinCount);
+            draw();
+        } catch (e) {
+            console.error("Web Audio API failed to initialize:", e);
+        }
+    }
+
+    function draw() {
+        requestAnimationFrame(draw);
+        if (!anal) return;
+        const cvs = document.getElementById('v');
+        const c = cvs.getContext('2d');
+        anal.getByteFrequencyData(data);
+        c.clearRect(0, 0, cvs.width, cvs.height);
+        const barWidth = cvs.width / data.length;
+        c.fillStyle = '#00ff00';
+        data.forEach((v, i) => {
+            const h = (v / 255) * cvs.height;
+            c.fillRect(i * barWidth, cvs.height - h, barWidth - 1, h);
+        });
+    }
+
+    const app = {
+        state: { p: [], i: 0 },
+        audio: new Audio(),
+        voices: [],
+        
+        init() {
+            this.audio.crossOrigin = "anonymous";
+            this.audio.onended = () => this.next();
+            this.audio.onplay = () => this.ui.setPlay(true);
+            this.audio.onpause = () => this.ui.setPlay(false);
+            this.loadGenres();
             
-            init() {
-                this.audio.onended = () => this.next();
-                this.audio.onplay = () => this.ui.setPlay(true);
-                this.audio.onpause = () => this.ui.setPlay(false);
-                this.loadGenres();
-                
-                window.speechSynthesis.onvoiceschanged = () => {
-                    this.voices = window.speechSynthesis.getVoices();
-                };
+            window.speechSynthesis.onvoiceschanged = () => {
+                this.voices = window.speechSynthesis.getVoices();
+                console.log("Voices loaded:", this.voices.length);
+            };
+        },
 
-                this.audio.ontimeupdate = () => {
-                    const timeEl = document.getElementById('time');
-                    if (timeEl) {
-                        const cur = Math.floor(this.audio.currentTime);
-                        const dur = Math.floor(this.audio.duration);
-                        if (!isNaN(cur) && !isNaN(dur) && dur > 0) {
-                            const f = s => String(s % 60).padStart(2, '0');
-                            timeEl.innerText = `TIME: ${String(Math.floor(cur/60)).padStart(2,'0')}:${f(cur)} / ${String(Math.floor(dur/60)).padStart(2,'0')}:${f(dur)}`;
-                        } else {
-                            timeEl.innerText = 'TIME: --:--';
-                        }
-                    }
-                };
-            },
-
-            search(q) {
-                if(!q) return;
-                if (q.startsWith('!')) {
-                    this.askAI(q.substring(1).trim());
+        search(q) {
+            if(!q) return;
+            if (q.startsWith('!')) {
+                this.askAI(q.substring(1).trim());
+            } else {
+                this.searchPlaylist(q);
+            }
+            document.getElementById('search').value = '';
+        },
+        
+        async searchPlaylist(q) {
+            document.getElementById('title').innerText = "SEARCHING...";
+            try {
+                const res = await fetch(`/api/player/playlist?query=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                if(data.playlist?.length) {
+                    this.state.p = data.playlist;
+                    this.play(0);
+                    this.ui.renderPlaylist();
                 } else {
-                    this.searchPlaylist(q);
+                    document.getElementById('title').innerText = "NOTHING FOUND";
                 }
-                document.getElementById('search').value = '';
-            },
-            
-            async searchPlaylist(q) {
-                document.getElementById('title').innerText = "SEARCHING...";
-                document.getElementById('artist').innerText = "Connecting to Satellite...";
-                try {
-                    const res = await fetch(`/api/player/playlist?query=${encodeURIComponent(q)}`);
-                    const data = await res.json();
-                    if(data.playlist?.length) {
-                        this.state.p = data.playlist;
-                        this.play(0);
-                        this.ui.renderPlaylist();
-                    } else {
-                        document.getElementById('title').innerText = ">>> NO SIGNAL <<<";
-                        document.getElementById('artist').innerText = "Check query and try again";
-                    }
-                } catch(e) { 
-                    console.error(e);
-                    document.getElementById('title').innerText = "ERROR 404"; 
+            } catch(e) { console.error(e); document.getElementById('title').innerText = "ERROR"; }
+        },
+
+        async askAI(q) {
+            document.getElementById('title').innerText = "THINKING...";
+            try {
+                const res = await fetch(`/api/ai/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: q })
+                });
+                const data = await res.json();
+                if(data.response) {
+                    document.getElementById('title').innerText = data.response;
+                    this.speak(data.response);
+                } else {
+                     document.getElementById('title').innerText = "AI is silent...";
                 }
+            } catch(e) { console.error(e); document.getElementById('title').innerText = "AI OFFLINE"; }
+        },
+
+        speak(text) {
+            console.log("Attempting to speak:", text);
+            if (!window.speechSynthesis) {
+                console.error("Speech Synthesis not supported.");
+                return;
+            }
+            const utterance = new SpeechSynthesisUtterance(text);
+            const ruVoice = this.voices.find(v => v.lang.startsWith('ru'));
+            if (ruVoice) {
+                utterance.voice = ruVoice;
+                console.log("Using Russian voice:", ruVoice.name);
+            } else {
+                console.log("Russian voice not found, using default.");
+            }
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+        },
+
+        play(i) {
+            if(!this.state.p[i]) return;
+            initAudio(); // Ensure audio context is ready
+            this.state.i = i;
+            const t = this.state.p[i];
+            document.getElementById('title').innerText = `${t.artist} - ${t.title}`;
+            this.audio.src = `/stream/${t.identifier}`;
+            this.audio.play();
+        },
+
+        toggle() { this.audio.paused ? this.audio.play() : this.audio.pause(); },
+        next() { this.play((this.state.i + 1) % this.state.p.length); },
+        prev() { this.play((this.state.i - 1 + this.state.p.length) % this.state.p.length); },
+
+        ui: {
+            setPlay(s) {
+                document.getElementById('playerNode').classList.toggle('playing', s);
+                document.getElementById('playBtn').innerText = s ? 'STOP' : 'PLAY';
             },
-
-            async askAI(q) {
-                document.getElementById('title').innerText = "DIALING UP TO A.I. ...";
-                document.getElementById('artist').innerText = "Please wait.";
-                try {
-                    const res = await fetch(`/api/ai/chat`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt: q })
-                    });
-                    const data = await res.json();
-                    if(data.response) {
-                        document.getElementById('title').innerText = "A.I. SAYS:";
-                        document.getElementById('artist').innerText = data.response;
-                        this.speak(data.response);
-                    } else {
-                         document.getElementById('title').innerText = "A.I. is offline...";
-                    }
-                } catch(e) {
-                    console.error(e);
-                    document.getElementById('title').innerText = "A.I. CONNECTION FAILED";
-                }
+            toggleDrawer(s) {
+                document.getElementById('drawer').classList.toggle('open', s);
             },
-
-            speak(text) {
-                if (!window.speechSynthesis) return;
-                const utterance = new SpeechSynthesisUtterance(text);
-                const ruVoice = this.voices.find(v => v.lang.startsWith('ru'));
-                if (ruVoice) utterance.voice = ruVoice;
-                utterance.rate = 1.1;
-                utterance.pitch = 1.0;
-                window.speechSynthesis.cancel();
-                window.speechSynthesis.speak(utterance);
-            },
-
-            play(i) {
-                if(!this.state.p[i]) return;
-                this.state.i = i;
-                const t = this.state.p[i];
-                document.getElementById('title').innerText = t.title;
-                document.getElementById('artist').innerText = t.artist;
-                this.audio.src = `/stream/${t.identifier}`;
-                this.audio.play();
-            },
-
-            toggle() { this.audio.paused ? this.audio.play() : this.audio.pause(); },
-            next() { this.play((this.state.i + 1) % this.state.p.length); },
-            prev() { this.play((this.state.i - 1 + this.state.p.length) % this.state.p.length); },
-
-            ui: {
-                setPlay(s) {
-                    document.getElementById('deck').classList.toggle('playing', s);
-                    document.getElementById('playBtn').innerHTML = s ? '■ STOP' : '► PLAY';
-                    if(s) {
-                        document.getElementById('playBtn').style.color = 'red';
-                    } else {
-                        document.getElementById('playBtn').style.color = 'darkgreen';
-                    }
-                },
-                toggleDrawer(s) {
-                    document.getElementById('drawer').classList.toggle('open', s);
-                },
-                renderPlaylist() {
-                    const l = document.getElementById('list');
-                    l.innerHTML = '';
-                    app.state.p.forEach((t, i) => {
-                        let d = document.createElement('div');
-                        d.className = 'item';
-                        d.innerText = `${i+1}. ${t.title} - ${t.artist}`;
-                        d.onclick = () => { app.play(i); app.ui.toggleDrawer(false); };
-                        l.appendChild(d);
-                    });
-                }
-            },
-
-            loadGenres() {
-                const genres = {
-                    "Pop Hits": "pop hits 2024",
-                    "Russian Gold": "русские хиты 90х",
-                    "Rock Classics": "rock classics hits",
-                    "Phonk / Drift": "phonk drift",
-                    "Lofi / Study": "lofi hip hop"
-                };
+            renderPlaylist() {
                 const l = document.getElementById('list');
-                l.innerHTML = ''; // Clear list before adding genres
-                for(let [k,v] of Object.entries(genres)) {
+                l.innerHTML = '';
+                app.state.p.forEach((t, i) => {
                     let d = document.createElement('div');
                     d.className = 'item';
-                    d.innerHTML = `► ${k}`;
-                    d.onclick = () => { this.searchPlaylist(v); this.ui.toggleDrawer(false); };
+                    d.innerText = `${i+1}. ${t.artist} - ${t.title}`;
+                    d.onclick = () => { app.play(i); app.ui.toggleDrawer(false); };
                     l.appendChild(d);
-                }
+                });
             }
-        };
-        window.onload = () => app.init();
-    </script>
+        },
+
+        loadGenres() {
+            const genres = {
+                "Pop Hits": "pop hits 2024",
+                "Russian Gold": "русские хиты 90х",
+                "Rock Classics": "rock classics hits",
+                "Phonk / Drift": "phonk drift",
+                "Lofi / Study": "lofi hip hop"
+            };
+            const l = document.getElementById('list');
+            l.innerHTML = '';
+            for(let [k,v] of Object.entries(genres)) {
+                let d = document.createElement('div');
+                d.className = 'item';
+                d.innerHTML = `► ${k}`;
+                d.onclick = () => { this.searchPlaylist(v); this.ui.toggleDrawer(false); };
+                l.appendChild(d);
+            }
+        }
+    };
+    window.onload = () => app.init();
+</script>
 </body>
 </html>
