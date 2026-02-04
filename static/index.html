@@ -3,353 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AURORA v3.3 STABLE</title>
-    <!-- Заглушка для фавиконки, чтобы не было 404 -->
+    <title>AURORA v3.5 MEGA</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-    
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-        
-        :root {
-            --bg: #008080; 
-            --gray: #c0c0c0; 
-            --dark: #000000; 
-            --green: #00ff00;
-            --navy: #000080;
-            --shadow-light: #ffffff; 
-            --shadow-dark: #808080;
-        }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            background-color: var(--bg); 
-            font-family: 'VT323', monospace; 
-            display: flex;
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            overflow: hidden; 
-            user-select: none;
-        }
-
-        /* Главное окно - фиксируем размеры, чтобы не прыгало */
-        .window {
-            width: 320px; /* Фиксированная ширина как у Win95 диалогов */
-            background: var(--gray); 
-            border: 2px solid var(--shadow-light); 
-            border-right-color: var(--dark); 
-            border-bottom-color: var(--dark);
-            padding: 4px; 
-            box-shadow: 8px 8px 0px rgba(0,0,0,0.5);
-            display: flex; 
-            flex-direction: column; 
-            gap: 6px;
-        }
-
-        .title-bar {
-            background: var(--navy); 
-            color: white; 
-            padding: 4px 6px; 
-            font-size: 20px; 
-            display: flex;
-            justify-content: space-between; 
-            align-items: center; 
-            letter-spacing: 1px;
-            height: 32px; /* Фикс высота */
-        }
-
-        /* Экран плеера - жесткая фиксация */
-        .screen {
-            background: black; 
-            border: 2px inset var(--shadow-dark); 
-            height: 80px; /* Строго фиксируем */
-            width: 100%;
-            padding: 0 10px;
-            color: var(--green); 
-            font-size: 22px; 
-            text-shadow: 0 0 5px var(--green);
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center;
-            align-items: center; 
-            position: relative; 
-            overflow: hidden;
-        }
-        
-        /* Сканлайн эффект */
-        .screen::after {
-            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-            background-size: 100% 4px; 
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        /* Бегущая строка */
-        .marquee-container {
-            width: 100%;
-            overflow: hidden;
-            white-space: nowrap;
-            text-align: center;
-        }
-        .marquee-text {
-            display: inline-block;
-            /* Если текст длинный - скроллим, иначе стоим */
-            padding-left: 0; 
-        }
-        .scrolling .marquee-text {
-            padding-left: 100%;
-            animation: scroll 12s linear infinite;
-        }
-        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-200%); } }
-
-        .status-line {
-            font-size: 16px;
-            color: yellow;
-            margin-top: 4px;
-            height: 18px; /* Резервируем место под статус */
-        }
-
-        /* Кнопки управления */
-        .controls { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; 
-            gap: 4px; 
-            height: 40px;
-        }
-        
-        .btn {
-            background: var(--gray); 
-            border: 2px solid var(--shadow-light);
-            border-right-color: var(--dark); 
-            border-bottom-color: var(--dark);
-            font-family: 'VT323', monospace; 
-            font-size: 24px; 
-            cursor: pointer; 
-            display: flex; align-items: center; justify-content: center;
-            line-height: 1;
-            padding-bottom: 4px; /* Визуальная коррекция шрифта */
-        }
-        
-        .btn:active {
-            border: 2px solid var(--dark); 
-            border-right-color: var(--shadow-light); 
-            border-bottom-color: var(--shadow-light);
-            transform: translate(1px, 1px);
-        }
-
-        /* Инпут */
-        input[type="search"] {
-            width: 100%; 
-            height: 36px;
-            padding: 4px 8px; 
-            font-family: 'VT323', monospace; 
-            font-size: 18px;
-            border: 2px inset var(--shadow-dark); 
-            background: white; 
-            outline: none;
-        }
-
-        /* Drawer (Список) */
-        .drawer { 
-            position: absolute; inset: 0; background: var(--gray); z-index: 100; 
-            display: flex; flex-direction: column; 
-            transform: translateY(105%); /* Прячем вниз */
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
-            padding: 6px; 
-            border: 2px outset white;
-        }
-        .drawer.open { transform: translateY(0); }
-        
-        .drawer-header { 
-            background: var(--navy); color: white; padding: 6px; font-size: 20px; 
-            display: flex; justify-content: space-between;
-            border: 2px solid var(--shadow-light); border-right-color: var(--dark); border-bottom-color: var(--dark);
-        }
-        .drawer-list { 
-            flex: 1; overflow-y: auto; background: white; border: 2px inset var(--shadow-dark); 
-            margin: 6px 0; padding: 2px;
-        }
-        .item { 
-            padding: 8px 4px; border-bottom: 1px dotted #ccc; 
-            cursor: pointer; color: #333; font-size: 18px; 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .item.active { background: var(--navy); color: white; }
-        .item:hover { background: #eee; }
-
+       :root{--bg:#008080;--gray:#c0c0c0;--dark:#000;--green:#00ff00;--navy:#000080;--shadow-light:#fff;--shadow-dark:#8080}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{background-color:var(--bg);font-family:'VT323',monospace;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;overflow:hidden;user-select:none}.window{position:relative;width:320px;background:var(--gray);border:2px solid var(--shadow-light);border-right-color:var(--dark);border-bottom-color:var(--dark);padding:4px;box-shadow:8px 8px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:6px}.title-bar{background:var(--navy);color:#fff;padding:4px 6px;font-size:20px;display:flex;justify-content:space-between;align-items:center;letter-spacing:1px;height:32px}.screen{background:#000;border:2px inset var(--shadow-dark);height:90px;width:100%;padding:0 10px;color:var(--green);display:flex;flex-direction:column;justify-content:space-between;align-items:center;position:relative;overflow:hidden;padding-top:10px}.screen::after{content:" ";display:block;position:absolute;top:0;left:0;bottom:0;right:0;background:linear-gradient(rgba(18,16,16,0) 50%,rgba(0,0,0,.25) 50%);background-size:100% 4px;pointer-events:none;z-index:10}.marquee-container{width:100%;overflow:hidden;white-space:nowrap;text-align:center;font-size:22px;text-shadow:0 0 5px var(--green);z-index:1}.marquee-text{display:inline-block;padding-left:0}.scrolling .marquee-text{padding-left:100%;animation:scroll 25s linear infinite} @keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-200%)}}.visualizer{display:flex;align-items:flex-end;justify-content:center;gap:2px;height:25px;width:90%;margin-bottom:5px;opacity:.3;transition:opacity .3s}.visualizer.active{opacity:1}.bar{flex:1;background:var(--green);width:100%;height:5%;box-shadow:0 0 4px var(--green)}.visualizer.active .bar{animation:equalizer .6s infinite ease-in-out alternate} @keyframes equalizer{0%{height:10%}100%{height:95%}}.status-line{font-size:14px;color:#ccffcc;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;z-index:1}.controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;height:40px}.btn{background:var(--gray);border:2px solid var(--shadow-light);border-right-color:var(--dark);border-bottom-color:var(--dark);font-family:'VT323',monospace;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding-bottom:4px}.btn:active{border:2px solid var(--dark);border-right-color:var(--shadow-light);border-bottom-color:var(--shadow-light);transform:translate(1px,1px)}input[type=search]{width:100%;height:36px;padding:4px 8px;font-family:'VT323',monospace;font-size:18px;border:2px inset var(--shadow-dark);background:#fff;outline:0}.drawer{position:absolute;top:0;left:0;right:0;bottom:0;background:var(--gray);z-index:100;display:flex;flex-direction:column;clip-path:inset(0 0 100% 0);transition:clip-path .3s ease-in-out;padding:4px;border:2px outset #fff}.drawer.open{clip-path:inset(0 0 0 0)}.drawer-header{background:var(--navy);color:#fff;padding:6px;font-size:20px;display:flex;justify-content:space-between;align-items:center;border:2px solid var(--shadow-light);border-right-color:var(--dark);border-bottom-color:var(--dark);flex-shrink:0}.drawer-list{flex:1;overflow-y:auto;background:#fff;border:2px inset var(--shadow-dark);margin:6px 0;padding:2px}.item{padding:10px 4px;border-bottom:1px dotted #ccc;cursor:pointer;color:#333;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.item.active{background:var(--navy);color:#fff}.item:hover{background:#eee}.drawer-list::-webkit-scrollbar{width:12px;background:var(--gray)}.drawer-list::-webkit-scrollbar-thumb{background:var(--navy);border:2px outset #fff}
     </style>
 </head>
 <body>
     <div id="app"></div>
 
     <script type="module">
-        // Используем надежные импорты без версий, чтобы всегда брать working build
         import { h, render } from 'https://esm.sh/preact';
         import { useState, useEffect, useRef } from 'https://esm.sh/preact/hooks';
         import htm from 'https://esm.sh/htm';
         const html = htm.bind(h);
 
         function App() {
-            // --- STATE ---
             const [playlist, setPlaylist] = useState([]);
             const [trackIndex, setTrackIndex] = useState(0);
             const [isPlaying, setIsPlaying] = useState(false);
-            const [title, setTitle] = useState('AURORA v3.3 READY');
-            const [status, setStatus] = useState('');
+            const [title, setTitle] = useState('AURORA v3.5 МЕГА');
+            const [status, setStatus] = useState('ГОТОВ');
             const [drawerOpen, setDrawerOpen] = useState(false);
             const [voices, setVoices] = useState([]);
-            
+
             const audioRef = useRef(null);
 
-            // --- VOICE INIT (ROBUST) ---
             useEffect(() => {
                 const initVoices = () => {
                     const vs = window.speechSynthesis.getVoices();
-                    if (vs.length > 0) {
-                        setVoices(vs);
-                        // console.log(`Voices loaded: ${vs.length}`);
-                    }
+                    if (vs.length > 0) setVoices(vs);
                 };
-
-                // Chrome хак: голоса могут загружаться асинхронно
                 window.speechSynthesis.onvoiceschanged = initVoices;
                 initVoices();
-                
-                // Таймер на случай если событие не сработает
-                const interval = setInterval(initVoices, 1000);
-                setTimeout(() => clearInterval(interval), 5000);
-
-                // Дефолтные жанры
+                const i = setInterval(initVoices, 1000);
+                setTimeout(() => clearInterval(i), 5000);
                 loadGenres();
             }, []);
 
-            // --- AUDIO LOGIC ---
             const playTrack = (index) => {
                 if (!playlist[index]) return;
-                
                 const track = playlist[index];
                 setTitle(`${track.artist} - ${track.title}`);
-                setStatus('BUFFERING...');
-                
-                // Остановить предыдущее
+                setStatus('БУФЕРИЗАЦИЯ...');
+
                 audioRef.current.pause();
-                
-                // Задать новый источник
-                const streamUrl = `/stream/${track.identifier}`;
-                audioRef.current.src = streamUrl;
-                
-                // Пытаемся запустить
-                const playPromise = audioRef.current.play();
-                
-                if (playPromise !== undefined) {
-                    playPromise
-                        .then(() => {
-                            setIsPlaying(true);
-                            setStatus('PLAYING');
-                        })
-                        .catch(error => {
-                            console.warn("Autoplay/Load error:", error);
-                            setIsPlaying(false);
-                            // Не показываем ошибку сразу, возможно это просто запрет автоплея
-                            if(error.name === 'NotSupportedError') {
-                                setStatus('MEDIA ERROR (404)');
-                            } else {
-                                setStatus('READY TO PLAY');
-                            }
-                        });
-                }
-                
+                audioRef.current.src = `/stream/${track.identifier}`;
+
+                audioRef.current.play()
+                    .then(() => { setIsPlaying(true); setStatus('ИГРАЕТ'); })
+                    .catch(e => {
+                        console.warn(e);
+                        setIsPlaying(false);
+                        setStatus(e.name === 'NotSupportedError' ? 'ОШИБКА МЕДИА' : 'ГОТОВ');
+                    });
+
                 setTrackIndex(index);
             };
 
             const togglePlay = () => {
                 if (!audioRef.current.src || audioRef.current.src === window.location.href) {
-                     if(playlist.length > 0) playTrack(0);
-                     return;
+                     if(playlist.length > 0) playTrack(0); return;
                 }
-                
                 if (audioRef.current.paused) {
-                    audioRef.current.play()
-                        .then(() => { setIsPlaying(true); setStatus('PLAYING'); })
-                        .catch(e => setStatus('ERROR'));
+                    audioRef.current.play().then(() => { setIsPlaying(true); setStatus('ИГРАЕТ'); });
                 } else {
-                    audioRef.current.pause();
-                    setIsPlaying(false);
-                    setStatus('PAUSED');
+                    audioRef.current.pause(); setIsPlaying(false); setStatus('ПАУЗА');
                 }
             };
 
             const nextTrack = () => playTrack((trackIndex + 1) % playlist.length);
             const prevTrack = () => playTrack((trackIndex - 1 + playlist.length) % playlist.length);
 
-            // --- TTS LOGIC ---
             const speak = (text) => {
                 if (!window.speechSynthesis) return;
-                
-                window.speechSynthesis.cancel(); // Сброс очереди
-                
+                window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.rate = 1.1;
-                utterance.pitch = 1.0;
-                utterance.volume = 1.0;
-
-                // Жесткий поиск русского голоса
-                // Приоритет: Google Русский -> Microsoft Ivan -> Любой 'ru'
-                const ruVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('ru')) 
-                             || voices.find(v => v.lang.includes('ru'))
-                             || voices[0];
-
-                if (ruVoice) {
-                    utterance.voice = ruVoice;
-                    // console.log("Speaking with:", ruVoice.name);
-                }
-
+                const ruVoice = voices.find(v => v.lang.includes('ru')) || voices[0];
+                if (ruVoice) utterance.voice = ruVoice;
                 window.speechSynthesis.speak(utterance);
             };
 
-            // --- API ---
             const searchApi = async (query) => {
-                setTitle('SEARCHING...');
-                setStatus('LOADING NET...');
+                setTitle('ПОИСК...'); setStatus('СЕТЬ...');
                 try {
                     const res = await fetch(`/api/player/playlist?query=${encodeURIComponent(query)}`);
                     const data = await res.json();
                     if (data.playlist?.length) {
-                        setPlaylist(data.playlist);
-                        setDrawerOpen(true);
-                        setStatus('DATA LOADED');
-                        setTitle(`FOUND ${data.playlist.length} ITEMS`);
-                        speak(`Нашла ${data.playlist.length} треков`);
+                        setPlaylist(data.playlist); setDrawerOpen(true);
+                        setStatus('ЗАГРУЖЕНО'); setTitle(`НАЙДЕНО ${data.playlist.length} ТРЕКОВ`);
+                        speak(`Найдено ${data.playlist.length} треков`);
                     } else {
-                        setStatus('NOT FOUND');
-                        speak("Ничего не найдено");
+                        setStatus('ПУСТО'); speak("Пусто");
                     }
-                } catch (e) {
-                    setStatus('API ERROR');
-                }
+                } catch { setStatus('ОШИБКА API'); }
             };
-            
+
             const askAI = async (query) => {
-                setTitle('AI THINKING...');
-                setStatus('PROCESSING...');
+                setTitle('AI ДУМАЕТ...'); setStatus('ВЫЧИСЛЕНИЕ...');
                 try {
-                    const res = await fetch('/api/ai/chat', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt: query })
-                    });
+                    const res = await fetch('/api/ai/chat', { method: 'POST', body: JSON.stringify({ prompt: query }) });
                     const data = await res.json();
                     if (data.response) {
-                        setTitle('AI RESPONSE');
-                        setStatus('SPEAKING...');
-                        speak(data.response);
+                        setTitle('ОТВЕТ AI'); setStatus('ГОВОРЮ'); speak(data.response);
                     }
-                } catch (e) {
-                    setStatus('AI OFFLINE');
-                }
+                } catch { setStatus('НЕ В СЕТИ'); }
             };
 
             const handleInput = (e) => {
@@ -359,83 +120,103 @@
                 else searchApi(val);
                 e.target.value = '';
             };
-            
+
             const loadGenres = () => {
                 const genres = [
-                    { identifier: "fake1", artist: "System", title: "Top Hits 2025", query: "top hits 2025", isGenre: true },
-                    { identifier: "fake2", artist: "System", title: "Russian 90s", query: "русские хиты 90х", isGenre: true },
-                    { identifier: "fake3", artist: "System", title: "Phonk Drift", query: "phonk drift", isGenre: true },
-                    { identifier: "fake4", artist: "System", title: "Lo-Fi Study", query: "lofi hip hop", isGenre: true },
+                    { artist: "🔥", title: "Top Hits 2025", query: "top hits 2025", isGenre: true },
+                    { artist: "🌍", title: "Global Viral 50", query: "viral 50 global spotify", isGenre: true },
+                    { artist: "🇷🇺", title: "Russian Hits 2024", query: "русские хиты новинки 2024", isGenre: true },
+                    { artist: "📼", title: "Russian 90s Discoteka", query: "русская дискотека 90х", isGenre: true },
+                    { artist: "🚬", title: "Russian Chanson/Rock", query: "русский рок классика", isGenre: true },
+                    { artist: "🏎️", title: "Phonk Drift", query: "phonk drift", isGenre: true },
+                    { artist: "☕", title: "Lo-Fi Study Girl", query: "lofi hip hop radio", isGenre: true },
+                    { artist: "🏋️", title: "Gym Hardstyle", query: "hardstyle gym music", isGenre: true },
+                    { artist: "🌙", title: "Night Drive Synthwave", query: "synthwave retrowave mix", isGenre: true },
+                    { artist: "🧘", title: "Deep Focus Ambient", query: "ambient focus music", isGenre: true },
+                    { artist: "🎤", title: "Eminem & 2000s Rap", query: "eminem 50 cent dr dre mix", isGenre: true },
+                    { artist: "🥤", title: "Trap & Mumble", query: "trap music hits", isGenre: true },
+                    { artist: "🌆", title: "90s Boom Bap", query: "90s hip hop boom bap", isGenre: true },
+                    { artist: "🎸", title: "Classic Rock 70s/80s", query: "classic rock 70s 80s", isGenre: true },
+                    { artist: "🤘", title: "Nu-Metal 2000s", query: "linkin park limp bizkit korn", isGenre: true },
+                    { artist: "🧟", title: "Grunge Nirvana Era", query: "nirvana pearl jam grunge", isGenre: true },
+                    { artist: "🕺", title: "Techno Bunker", query: "techno bunker mix", isGenre: true },
+                    { artist: "💊", title: "Drum & Bass Liquid", query: "liquid dnb mix", isGenre: true },
+                    { artist: "🏠", title: "Ibiza House", query: "ibiza deep house", isGenre: true },
+                    { artist: "🕺", title: "Italo Disco 80s", query: "italo disco 80s hits", isGenre: true },
+                    { artist: "🎷", title: "Jazz Classics", query: "jazz classics coltrane miles davis", isGenre: true },
+                    { artist: "🎩", title: "Frank Sinatra Vibe", query: "frank sinatra dean martin", isGenre: true }
                 ];
-                setPlaylist(genres);
+                const formatted = genres.map((g, i) => ({ ...g, identifier: `genre_${i}` }));
+                setPlaylist(formatted);
             };
 
-            // --- RENDER ---
+            const renderVisualizer = () => {
+                const bars = [];
+                for (let i = 0; i < 16; i++) {
+                    const delay = Math.random() * 0.5 + 's';
+                    bars.push(html`<div class="bar" style="animation-delay: ${delay}"></div>`);
+                }
+                return bars;
+            };
+
             return html`
                 <div class="window">
                     <div class="title-bar">
-                        <span>AURORA v3.3</span>
+                        <span>AURORA v3.5 МЕГА</span>
                         <div style="cursor: pointer;" onClick=${() => window.location.reload()}>↺</div>
                     </div>
-                    
+
                     <div class="screen">
                         <div class="marquee-container ${isPlaying ? 'scrolling' : ''}">
                             <span class="marquee-text">${title}</span>
                         </div>
+
+                        <div class="visualizer ${isPlaying ? 'active' : ''}">
+                            ${renderVisualizer()}
+                        </div>
+
                         <div class="status-line">${status}</div>
                     </div>
-                    
+
                     <div class="controls">
-                        <!-- Используем безопасные символы вместо HTML entities -->
                         <button class="btn" onClick=${prevTrack}>⏮</button>
                         <button class="btn" onClick=${togglePlay}>${isPlaying ? '⏸' : '▶'}</button>
                         <button class="btn" onClick=${nextTrack}>⏭</button>
                     </div>
-                    
-                    <input type="search" placeholder="Type '!chat' or 'song'..." onChange=${handleInput} />
-                    
+
+                    <input type="search" placeholder="Введите '!чат' или песню..." onChange=${handleInput} />
+
                     <button class="btn" style="font-size: 20px; padding: 8px;" onclick=${() => setDrawerOpen(true)}>
-                        📂 PLAYLIST
+                        📂 СТАНЦИИ
                     </button>
+
+                    <div class="drawer ${drawerOpen ? 'open' : ''}">
+                        <div class="drawer-header">
+                            <span>СТАНЦИИ (${playlist.length})</span>
+                            <span style="cursor:pointer; padding: 0 10px;" onClick=${() => setDrawerOpen(false)}>✖</span>
+                        </div>
+
+                        <div class="drawer-list">
+                            ${playlist.map((track, i) => html`
+                                <div class="item ${i === trackIndex ? 'active' : ''}" onClick=${() => {
+                                    if (track.isGenre) searchApi(track.query);
+                                    else { playTrack(i); setDrawerOpen(false); }
+                                }}>
+                                    ${track.isGenre ? `${track.artist} ${track.title}` : `${i + 1}. ${track.artist} - ${track.title}`}
+                                </div>
+                            `)}
+                        </div>
+
+                        <div style="display:flex; gap:5px; flex-shrink: 0;">
+                            <button class="btn" style="flex:1; font-size:18px;" onClick=${() => speak("Система активна")}>🔊 ТЕСТ</button>
+                            <button class="btn" style="flex:1; font-size:18px;" onClick=${() => setDrawerOpen(false)}>ЗАКРЫТЬ</button>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- DRAWER -->
-                <div class="drawer ${drawerOpen ? 'open' : ''}">
-                    <div class="drawer-header">
-                        <span>PLAYLIST (${playlist.length})</span>
-                        <span style="cursor:pointer;" onClick=${() => setDrawerOpen(false)}>✖</span>
-                    </div>
-                    
-                    <div class="drawer-list">
-                         ${voices.length === 0 && html`<div style="color:red; padding:5px;">⚠️ VOICE API LOADING...</div>`}
-                         
-                        ${playlist.map((track, i) => html`
-                            <div class="item ${i === trackIndex ? 'active' : ''}" onClick=${() => {
-                                if (track.isGenre) {
-                                    searchApi(track.query);
-                                } else {
-                                    playTrack(i);
-                                    setDrawerOpen(false);
-                                }
-                            }}>
-                                ${track.isGenre ? `📡 ${track.title}` : `${i + 1}. ${track.artist} - ${track.title}`}
-                            </div>
-                        `)}
-                    </div>
-                    
-                    <div style="display:flex; gap:5px;">
-                        <button class="btn" style="flex:1; font-size:18px;" onClick=${() => speak("Проверка системы. Голос активен.")}>🔊 TEST VOICE</button>
-                        <button class="btn" style="flex:1; font-size:18px;" onClick=${() => setDrawerOpen(false)}>CLOSE</button>
-                    </div>
-                </div>
-                
-                <audio ref=${audioRef} 
-                    onEnded=${nextTrack} 
-                    onError=${(e) => {
-                        console.error("Audio Error:", e);
-                        setStatus("STREAM FAILED");
-                        setIsPlaying(false);
-                    }}
+                <audio ref=${audioRef}
+                    onEnded=${nextTrack}
+                    onError=${() => { setStatus("СБОЙ"); setIsPlaying(false); }}
                 />
             `;
         }
