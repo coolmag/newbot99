@@ -95,9 +95,9 @@
     </script>
 
     <script type="module">
-        // Ипользуем esm.sh - он надежнее для модулей чем unpkg
-        import { h, render } from 'https://esm.sh/preact @10.19.6';
-        import { useState, useEffect, useRef } from 'https://esm.sh/preact @10.19.6/hooks';
+        // ИСПРАВЛЕННЫЕ ИМПОРТЫ (Без пробелов и ошибок версий)
+        import { h, render } from 'https://esm.sh/preact';
+        import { useState, useEffect, useRef } from 'https://esm.sh/preact/hooks';
         import htm from 'https://esm.sh/htm';
         const html = htm.bind(h);
 
@@ -106,7 +106,7 @@
             const [playlist, setPlaylist] = useState([]);
             const [trackIndex, setTrackIndex] = useState(0);
             const [isPlaying, setIsPlaying] = useState(false);
-            const [title, setTitle] = useState('AURORA SYSTEM 3.1 READY');
+            const [title, setTitle] = useState('AURORA SYSTEM v3.2');
             const [drawerOpen, setDrawerOpen] = useState(false);
             const [status, setStatus] = useState('');
             
@@ -167,7 +167,7 @@
             const nextTrack = () => playTrack((trackIndex + 1) % playlist.length);
             const prevTrack = () => playTrack((trackIndex - 1 + playlist.length) % playlist.length);
 
-            // --- AI & Search ---
+            // --- API & Search ---
             const searchApi = async (query) => {
                 setTitle('SEARCHING NET...');
                 setStatus('Loading...');
@@ -245,7 +245,7 @@
             return html`
                 <div class="window">
                     <div class="title-bar">
-                        <span>AURORA v3.1</span>
+                        <span>AURORA v3.2</span>
                         <div style="font-size: 14px; cursor: pointer;" onClick=${() => window.location.reload()}>↺</div>
                     </div>
                     
