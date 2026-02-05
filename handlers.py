@@ -14,11 +14,14 @@ from config import get_settings
 from chat_service import ChatManager
 from nlp import analyze_message
 from keyboards import get_main_menu_keyboard, get_subcategory_keyboard
+from ai_personas import PERSONAS # Import personas to build the admin menu
 
 logger = logging.getLogger("handlers")
 
-# --- ГЛАВНОЕ МЕНЮ (Кнопки) ---
+# --- KEYBOARDS ---
+
 def get_persistent_menu():
+    """The main reply keyboard under the text input area."""
     return ReplyKeyboardMarkup(
         [
             [KeyboardButton("📻 Выбрать Жанр"), KeyboardButton("⏭ Skip")],
@@ -27,75 +30,70 @@ def get_persistent_menu():
         resize_keyboard=True
     )
 
+def get_admin_keyboard():
+    """Builds the admin menu for changing AI persona."""
+    # A simple mapping for button labels
+    persona_labels = {
+        "default": "Эстет", "standup": "Комик", "expert": "Эксперт", 
+        "gop": "Пацанский", "toxic": "Токсик", "chill": "Философ"
+    }
+    keyboard = [
+        [InlineKeyboardButton(f"Режим: {persona_labels.get(key, key)}", callback_data=f"set_mode|{key}")]
+        for key in PERSONAS.keys()
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+# --- COMMAND HANDLERS ---
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handles the /start command."""
     await update.message.reply_text(
-        "🎧 **Aurora v3.8 System Online**\nУправляй музыкой через кнопки внизу!",
+        "🎧 **Aurora AI System Online**\nУправляй музыкой через кнопки внизу!",
         parse_mode=ParseMode.MARKDOWN,
         reply_markup=get_persistent_menu()
     )
 
-async def _do_radio(chat_id: int, query: str, context: ContextTypes.DEFAULT_TYPE, name: str = None):
-    display_name = name or query
-    await context.bot.send_message(
-        chat_id, 
-        f"📡 Подключение: *{display_name}*", 
-        parse_mode=ParseMode.MARKDOWN,
-        reply_markup=get_persistent_menu()
-    )
-    asyncio.create_task(
-        context.application.radio_manager.start(chat_id, query, display_name=display_name)
-    )
+async def radio_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handles the /radio [query] command."""
+    query = " ".join(context.args) if context.args else "random"
+    name = query if query != "random" else "🎲 Случайная волна"
+    await _do_radio(update.effective_chat.id, query, context, name=name)
 
 async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Показывает каталог (Inline Buttons)"""
+    """Handles /menu command and 'Выбрать Жанр' button."""
     await update.message.reply_text(
-        "🎛 **Каталог частот:**",
+        "🎛 **Каталог музыкальных частот:**",
         reply_markup=get_main_menu_keyboard()
     )
 
-# --- CALLBACKS (Навигация по каталогу) ---
-async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    data = query.data
-
-    if data.startswith("cat|"):
-        path = data.split("|")[1]
-        kb = get_subcategory_keyboard(path)
-        if kb: await query.edit_message_reply_markup(reply_markup=kb)
+async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handles the /admin command for persona management."""
+    user_id = update.effective_user.id
+    if user_id not in context.application.settings.ADMIN_ID_LIST:
+        await update.message.reply_text("⛔️ Доступ запрещен.")
+        return
     
-    elif data.startswith("play_cat|"):
-        # Парсим путь к жанру
-        from radio import MUSIC_CATALOG
-        try:
-            path = data.split("|", 1)[1] 
-            keys = path.split("|")
-            curr = MUSIC_CATALOG
-            for k in keys:
-                if k in curr:
-                    curr = curr[k]
-                elif "children" in curr and k in curr["children"]:
-                    curr = curr["children"][k]
-                else:
-                    raise KeyError(f"Invalid path key: {k}")
-            
-            target_query = curr.get("query", "top hits")
-            target_name = curr.get("name", "Genre")
-            
-            await query.delete_message()
-            await _do_radio(update.effective_chat.id, target_query, context, name=target_name)
-        except Exception as e:
-            logger.error(f"Error processing play_cat callback: {e}")
-            await _do_radio(update.effective_chat.id, "top hits", context, name="🎶 Топ Хиты")
+    current_mode = context.chat_data.get("mode", "default")
+    await update.message.reply_text(
+        f"⚙️ **Меню администратора**\n\nВыберите характер для AI.\nТекущий режим: *{current_mode}*",
+        parse_mode=ParseMode.MARKDOWN,
+        reply_markup=get_admin_keyboard()
+    )
 
-    elif data == "main_menu_genres":
-        await query.edit_message_reply_markup(reply_markup=get_main_menu_keyboard())
-        
-    elif data == "play_random":
-        await query.delete_message()
-        await _do_radio(update.effective_chat.id, "random", context, name="🎲 Random Mix")
+async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handles the /status command."""
+    # A simple status for now, can be expanded later
+    await update.message.reply_text("✅ Бот онлайн. AI-модуль активен.")
 
-# --- Background Worker Functions ---
+# --- HELPER FUNCTIONS ---
+
+async def _do_radio(chat_id: int, query: str, context: ContextTypes.DEFAULT_TYPE, name: str = None):
+    """Starts the radio session."""
+    display_name = name or query
+    # No need to send a message here, the calling function (or AI comment) does it.
+    asyncio.create_task(
+        context.application.radio_manager.start(chat_id, query, display_name=display_name)
+    )
 
 async def _do_ai_chat_background(chat_id: int, text: str, user_name: str, context: ContextTypes.DEFAULT_TYPE):
     """Handles AI chat in the background."""
@@ -103,7 +101,6 @@ async def _do_ai_chat_background(chat_id: int, text: str, user_name: str, contex
     mode = context.chat_data.get("mode", "default")
     response = await ChatManager.get_response(text, user_name, mode)
     await context.bot.send_message(chat_id, response, reply_markup=get_persistent_menu())
-
 
 async def _do_search_background(chat_id: int, query: str, context: ContextTypes.DEFAULT_TYPE):
     """Handles music search and download in the background."""
@@ -126,11 +123,9 @@ async def _do_search_background(chat_id: int, query: str, context: ContextTypes.
                     ]])
 
                 await context.bot.send_audio(
-                    chat_id,
-                    audio=f,
+                    chat_id, audio=f,
                     caption=f"▶️ *{dl_result.track_info.title}*\n👤 {dl_result.track_info.uploader}",
-                    parse_mode=ParseMode.MARKDOWN,
-                    reply_markup=keyboard
+                    parse_mode=ParseMode.MARKDOWN, reply_markup=keyboard
                 )
         finally:
             try:
@@ -140,14 +135,61 @@ async def _do_search_background(chat_id: int, query: str, context: ContextTypes.
     else:
         await context.bot.send_message(chat_id, "❌ Не удалось скачать аудио для этого трека.", reply_markup=get_persistent_menu())
 
+# --- MAIN HANDLERS ---
 
-# --- TEXT HANDLER (Кнопки и Чат) ---
+async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handles all inline button presses."""
+    query = update.callback_query
+    await query.answer()
+    data = query.data
+
+    if data.startswith("cat|"):
+        path = data.split("|")[1]
+        kb = get_subcategory_keyboard(path)
+        if kb: await query.edit_message_reply_markup(reply_markup=kb)
+    
+    elif data.startswith("play_cat|"):
+        from radio import MUSIC_CATALOG
+        try:
+            path = data.split("|", 1)[1] 
+            keys = path.split("|")
+            curr = MUSIC_CATALOG
+            for k in keys:
+                curr = curr[k] if "children" not in curr else curr["children"][k]
+            
+            target_query = curr.get("query", "top hits")
+            target_name = curr.get("name", "Genre")
+            
+            await query.edit_message_text(f"📡 Подключаюсь к каналу: *{target_name}*", parse_mode=ParseMode.MARKDOWN)
+            await _do_radio(update.effective_chat.id, target_query, context, name=target_name)
+        except Exception as e:
+            logger.error(f"Error processing play_cat callback: {e}")
+            await query.edit_message_text("❌ Ошибка выбора жанра.")
+
+    elif data.startswith("set_mode|"):
+        user_id = query.from_user.id
+        if user_id not in context.application.settings.ADMIN_ID_LIST:
+            await query.answer("⛔️ Доступ запрещен.", show_alert=True)
+            return
+
+        mode = data.split("|")[1]
+        context.chat_data["mode"] = mode
+        await query.answer(f"✅ Режим AI изменен на: {mode}")
+        await query.edit_message_text(
+            f"⚙️ **Меню администратора**\n\nТекущий режим: *{mode}*",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=get_admin_keyboard()
+        )
+
+    elif data == "main_menu_genres":
+        await query.edit_message_reply_markup(reply_markup=get_main_menu_keyboard())
+
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handles all text messages and reply keyboard buttons."""
     text = update.effective_message.text
     chat_id = update.effective_chat.id
     if not text: return
 
-    # --- Button Handling ---
     if text == "📻 Выбрать Жанр":
         await menu_command(update, context)
         return
@@ -160,54 +202,46 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🛑 Эфир остановлен.", reply_markup=get_persistent_menu())
         return
     if text == "🎲 Случайная волна":
-        # For random wave, we can add a pre-comment too
         await update.message.reply_text("🎲 Кручу барабан...", disable_notification=True)
         await _do_radio(chat_id, "random", context, name="🎲 Случайная волна")
         return
 
-    # --- AI Intent Analysis ---
     mode = context.chat_data.get("mode", "default")
     analysis = await analyze_message(text, mode=mode)
     
     intent = analysis.get('intent')
-    query = analysis.get('query')
-    comment = analysis.get('comment') # New field
+    query_text = analysis.get('query')
+    comment = analysis.get('comment')
 
-    # --- Execute Action ---
-    
-    # If the AI wants to chat, let it chat.
+    if comment:
+        await update.message.reply_text(comment, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_menu())
+
     if intent == 'chat':
-        # If there's a comment, it's the primary response.
-        # If not, fall back to the full chat response worker.
-        if comment:
-            await update.message.reply_text(comment, reply_markup=get_persistent_menu())
-        else:
+        if not comment: # If AI provided a comment, we don't need a second response
             asyncio.create_task(
                 _do_ai_chat_background(chat_id, text, update.effective_user.first_name, context)
             )
-
-    # For radio or search, first send the comment, then do the action.
     elif intent == 'radio':
-        if comment:
-            await update.message.reply_text(comment, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_menu())
-        # The _do_radio function sends its own "Connecting..." message, so we just call it.
-        await _do_radio(chat_id, query, context, name=query)
-        
+        await context.bot.send_message(chat_id, f"📡 Подключаюсь к каналу: *{query_text}*", parse_mode=ParseMode.MARKDOWN)
+        await _do_radio(chat_id, query_text, context, name=query_text)
     elif intent == 'search':
-        # Acknowledge with the AI's comment or a default one
-        ack_message = comment or f"✅ Принято! Ищу трек: *{query}*"
-        await update.message.reply_text(ack_message, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_menu())
-        # Run the slow search/download task in the background
         asyncio.create_task(
-            _do_search_background(chat_id, query, context)
+            _do_search_background(chat_id, query_text, context)
         )
 
 def setup_handlers(app, radio, settings, downloader):
+    """Registers all handlers with the application."""
     app.downloader = downloader
     app.radio_manager = radio
     app.settings = settings
     
+    # Command Handlers
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("menu", menu_command))
+    app.add_handler(CommandHandler("radio", radio_command))
+    app.add_handler(CommandHandler("status", status_command))
+    app.add_handler(CommandHandler("admin", admin_command))
+
+    # Other Handlers
     app.add_handler(CallbackQueryHandler(button_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
