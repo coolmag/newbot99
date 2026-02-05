@@ -1,7 +1,7 @@
 import logging
 import json
 import re
-import google.generativeai as genai
+from google import genai
 from typing import Optional, Dict
 
     
@@ -28,7 +28,6 @@ class AIManager:
         
         if api_key:
             try:
-                genai.configure(api_key=api_key)
                 # ВОЗВРАЩАЕМ GEMMA 3, как было стабильно
                 self.model = genai.GenerativeModel('gemma-3-12b-it') 
                 self.is_active = True

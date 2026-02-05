@@ -1,5 +1,5 @@
 import logging
-import google.generativeai as genai
+from google import genai
 
 from ai_manager import AIManager # Теперь это класс
 
