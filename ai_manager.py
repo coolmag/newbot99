@@ -68,17 +68,25 @@ class AIManager:
             )
             
             raw_text = response.text.strip()
+            logger.info(f"[NLP] Raw AI response for parsing: '{raw_text}'")
 
+            # Default values
             intent = "chat"
             query = text
 
-            if "INTENT:" in raw_text:
-                if "search" in raw_text: intent = "search"
-                elif "radio" in raw_text: intent = "radio"
-                
-                if "| QUERY:" in raw_text:
-                    query = raw_text.split("| QUERY:")[1].strip()
+            # Regex to robustly parse the output
+            intent_match = re.search(r"INTENT:\s*(\w+)", raw_text, re.IGNORECASE)
+            query_match = re.search(r"QUERY:\s*(.+)", raw_text, re.IGNORECASE)
+
+            if intent_match:
+                parsed_intent = intent_match.group(1).lower()
+                if parsed_intent in ["search", "radio", "chat"]:
+                    intent = parsed_intent
+
+            if query_match:
+                query = query_match.group(1).strip()
             
+            logger.info(f"[NLP] Parsed Intent: {intent}, Query: {query}")
             return {"intent": intent, "query": query}
 
         except Exception as e:
