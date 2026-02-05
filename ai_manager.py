@@ -58,11 +58,13 @@ class AIManager:
             Input: "{text}"
             """
 
-            # New SDK: Use client.models.generate_content_async
+            # New SDK: Use client.models.generate_content and pass config as a dict
             response = await self.client.models.generate_content(
                 model=self.model_name,
                 contents=prompt,
-                generation_config=genai.GenerationConfig(temperature=0.1)
+                config={
+                    'temperature': 0.1
+                }
             )
             
             raw_text = response.text.strip()
