@@ -180,11 +180,24 @@ class RadioSession:
             if not result or not result.success: return False
             
             caption = get_now_playing_message(track, self.display_name)
-            
+
+            # Создаем клавиатуру
+            keyboard = None
+            if self.settings.BASE_URL:
+                keyboard = InlineKeyboardMarkup([[
+                    InlineKeyboardButton("🎧 Веб-плеер", url=self.settings.BASE_URL)
+                ]])
+
             if result.file_path:
                 try:
                     with open(result.file_path, 'rb') as f:
-                        await self.bot.send_audio(self.chat_id, audio=f, caption=caption, parse_mode=ParseMode.MARKDOWN)
+                        await self.bot.send_audio(
+                            self.chat_id, 
+                            audio=f, 
+                            caption=caption, 
+                            parse_mode=ParseMode.MARKDOWN,
+                            reply_markup=keyboard
+                        )
                     
                     await self._delete_status()
                     
