@@ -4,11 +4,10 @@ import re
 from google import genai
 from typing import Optional, Dict
 
-    
-
 from config import get_settings
 
 logger = logging.getLogger("ai_manager")
+
 AURORA_SYSTEM_PROMPT = """
 Ты — Аврора, ИИ-диджей в Телеграм-боте.
 Твой стиль: дерзкая, веселая, используешь эмодзи (🎧, 🛸, 🎸).
@@ -18,22 +17,28 @@ AURORA_SYSTEM_PROMPT = """
 
 class AIManager:
     """
-    🧠 AI Manager (Gemma 3 Edition).
+    🧠 AI Manager (Client SDK Edition).
     """
     
     def __init__(self):
+        logger.info("--- Running AIManager Version 5.0 (Client SDK Refactor) ---")
         self.is_active = False
+        self.client = None
+        self.model_name = 'gemma-3-12b-it'
+        
         settings = get_settings()
         api_key = settings.GOOGLE_API_KEY
         
         if api_key:
             try:
-                # ВОЗВРАЩАЕМ GEMMA 3, как было стабильно
-                self.model = genai.GenerativeModel('gemma-3-12b-it') 
+                # New SDK: Instantiate a client
+                self.client = genai.Client(api_key=api_key)
+                # Test the connection by getting the model info (optional but good practice)
+                self.client.models.get(self.model_name)
                 self.is_active = True
-                logger.info("✅ Google GenAI configured successfully (Gemma 3).")
+                logger.info(f"✅ Google GenAI client configured successfully for model {self.model_name}.")
             except Exception as e:
-                logger.error(f"❌ Failed to configure Google GenAI: {e}")
+                logger.error(f"❌ Failed to configure Google GenAI client: {e}")
         else:
             logger.warning("⚠️ GOOGLE_API_KEY is missing!")
 
@@ -53,9 +58,10 @@ class AIManager:
             Input: "{text}"
             """
 
-            # Gemma требует настройки генерации
-            response = await self.model.generate_content_async(
-                prompt,
+            # New SDK: Use client.models.generate_content_async
+            response = await self.client.models.generate_content_async(
+                model=self.model_name,
+                contents=prompt,
                 generation_config=genai.GenerationConfig(temperature=0.1)
             )
             
@@ -83,18 +89,22 @@ class AIManager:
         final_system_prompt = system_prompt or AURORA_SYSTEM_PROMPT
 
         try:
-            # Для Gemma лучше использовать чат-сессию с имитацией system prompt в истории
-            chat = self.model.start_chat(history=[
-                {
-                    "role": "user",
-                    "parts": [final_system_prompt + "\n\nТы поняла свою роль?"]
-                },
-                {
-                    "role": "model",
-                    "parts": ["Конечно! Я Аврора, твой музыкальный пилот! Погнали! 🎧🛸"]
-                }
-            ])
+            # New SDK: Use client.chats.create
+            chat = self.client.chats.create(
+                model=self.model_name,
+                history=[
+                    {
+                        "role": "user",
+                        "parts": [final_system_prompt + "\n\nТы поняла свою роль?"]
+                    },
+                    {
+                        "role": "model",
+                        "parts": ["Конечно! Я Аврора, твой музыкальный пилот! Погнали! 🎧🛸"]
+                    }
+                ]
+            )
             
+            # New SDK: Use chat.send_message_async
             response = await chat.send_message_async(user_text)
             return response.text
             
