@@ -23,8 +23,7 @@ def get_persistent_menu():
             [KeyboardButton("📻 Выбрать Жанр"), KeyboardButton("⏭ Skip")],
             [KeyboardButton("🛑 Стоп"), KeyboardButton("🎲 Случайная волна")]
         ],
-        resize_keyboard=True,
-        persistent=True
+        resize_keyboard=True
     )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
