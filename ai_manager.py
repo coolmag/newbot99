@@ -42,29 +42,41 @@ class AIManager:
         else:
             logger.warning("⚠️ GOOGLE_API_KEY is missing!")
 
-    async def analyze_message(self, text: str) -> Dict:
+    async def analyze_message(self, text: str, mode: str = "default") -> Dict:
         if not self.is_active:
             return self._regex_fallback(text)
+
+        # Get the persona prompt
+        from ai_personas import get_system_prompt
+        system_prompt = get_system_prompt(mode)
             
         try:
             prompt = f"""
-            Classify intent:
-            1. 'search' (specific song/artist)
-            2. 'radio' (genre/mood/vibe/mix/hits)
-            3. 'chat' (general conversation)
+            {system_prompt}
+
+            Твоя задача — классифицировать запрос юзера и ДАТЬ КОРОТКИЙ КОММЕНТАРИЙ в своем стиле.
+
+            ИНТЕНТЫ:
+            1. 'search': Если юзер ищет конкретный трек/исполнителя.
+            2. 'radio': Если юзер просит жанр, настроение, подборку или что-то абстрактное.
+            3. 'chat': Для болтовни не о музыке.
+
+            ФОРМАТ ОТВЕТА (Строго! Одна строка, три части):
+            INTENT: <intent> | QUERY: <query> | COMMENT: <твой комментарий>
             
-            Format: INTENT: <intent> | QUERY: <query>
-            
-            Input: "{text}"
+            Примеры:
+            User: "Врубай рок" -> INTENT: radio | QUERY: best rock music mix | COMMENT: О да, сейчас будет жарко! 🎸
+            User: "Linkin Park Numb" -> INTENT: search | QUERY: Linkin Park Numb | COMMENT: Легендарный трек! Включаю.
+            User: "Привет" -> INTENT: chat | QUERY: Привет | COMMENT: Привет! Какую волну поймаем сегодня?
+
+            User input: "{text}"
+            Answer:
             """
 
-            # New SDK: Use client.models.generate_content and pass config as a dict
             response = await self.client.aio.models.generate_content(
                 model=self.model_name,
                 contents=prompt,
-                config={
-                    'temperature': 0.1
-                }
+                config={'temperature': 0.5}
             )
             
             raw_text = response.text.strip()
@@ -73,10 +85,12 @@ class AIManager:
             # Default values
             intent = "chat"
             query = text
+            comment = None
 
             # Regex to robustly parse the output
             intent_match = re.search(r"INTENT:\s*(\w+)", raw_text, re.IGNORECASE)
-            query_match = re.search(r"QUERY:\s*(.+)", raw_text, re.IGNORECASE)
+            query_match = re.search(r"QUERY:\s*(.+?)(?=\s*\||\s*$)", raw_text, re.IGNORECASE)
+            comment_match = re.search(r"COMMENT:\s*(.+)", raw_text, re.IGNORECASE)
 
             if intent_match:
                 parsed_intent = intent_match.group(1).lower()
@@ -86,8 +100,11 @@ class AIManager:
             if query_match:
                 query = query_match.group(1).strip()
             
-            logger.info(f"[NLP] Parsed Intent: {intent}, Query: {query}")
-            return {"intent": intent, "query": query}
+            if comment_match:
+                comment = comment_match.group(1).strip()
+            
+            logger.info(f"[NLP] Parsed -> Intent: {intent}, Query: {query}, Comment: {comment}")
+            return {"intent": intent, "query": query, "comment": comment}
 
         except Exception as e:
             logger.warning(f"[NLP] Error: {e}, using regex fallback.")

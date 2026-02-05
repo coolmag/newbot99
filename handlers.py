@@ -160,25 +160,44 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🛑 Эфир остановлен.", reply_markup=get_persistent_menu())
         return
     if text == "🎲 Случайная волна":
+        # For random wave, we can add a pre-comment too
+        await update.message.reply_text("🎲 Кручу барабан...", disable_notification=True)
         await _do_radio(chat_id, "random", context, name="🎲 Случайная волна")
         return
 
-    # --- AI Intent Analysis (Still blocking, but faster than the actions) ---
-    analysis = await analyze_message(text)
-    intent = analysis['intent']
-    query = analysis['query']
+    # --- AI Intent Analysis ---
+    mode = context.chat_data.get("mode", "default")
+    analysis = await analyze_message(text, mode=mode)
     
-    # --- Offload slow tasks to background ---
-    if intent == 'chat':
-        asyncio.create_task(
-            _do_ai_chat_background(chat_id, text, update.effective_user.first_name, context)
-        )
+    intent = analysis.get('intent')
+    query = analysis.get('query')
+    comment = analysis.get('comment') # New field
 
+    # --- Execute Action ---
+    
+    # If the AI wants to chat, let it chat.
+    if intent == 'chat':
+        # If there's a comment, it's the primary response.
+        # If not, fall back to the full chat response worker.
+        if comment:
+            await update.message.reply_text(comment, reply_markup=get_persistent_menu())
+        else:
+            asyncio.create_task(
+                _do_ai_chat_background(chat_id, text, update.effective_user.first_name, context)
+            )
+
+    # For radio or search, first send the comment, then do the action.
     elif intent == 'radio':
+        if comment:
+            await update.message.reply_text(comment, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_menu())
+        # The _do_radio function sends its own "Connecting..." message, so we just call it.
         await _do_radio(chat_id, query, context, name=query)
         
     elif intent == 'search':
-        await update.message.reply_text(f"✅ Принято! Ищу трек: *{query}*", parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_menu())
+        # Acknowledge with the AI's comment or a default one
+        ack_message = comment or f"✅ Принято! Ищу трек: *{query}*"
+        await update.message.reply_text(ack_message, parse_mode=ParseMode.MARKDOWN, reply_markup=get_persistent_menu())
+        # Run the slow search/download task in the background
         asyncio.create_task(
             _do_search_background(chat_id, query, context)
         )
