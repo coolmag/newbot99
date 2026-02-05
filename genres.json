@@ -2,58 +2,144 @@
     "main_menu": {
         "name": "Главное меню",
         "children": {
-            "rock": { "name": "🎸 Rock & Metal", "action": "navigate", "value": "rock" },
-            "hiphop": { "name": "🎤 Hip-Hop & Rap", "action": "navigate", "value": "hiphop" },
-            "edm": { "name": "🎧 Electronic", "action": "navigate", "value": "edm" },
-            "pop": { "name": "✨ Pop & R&B", "action": "navigate", "value": "pop" },
-            "jazz": { "name": "🎷 Jazz & Soul", "action": "navigate", "value": "jazz" }
+            "rockmetal": {
+                "name": "🎸 Rock & Metal",
+                "action": "navigate",
+                "value": "rockmetal"
+            },
+            "hiphoprap": {
+                "name": "🎤 Hip-Hop & Rap",
+                "action": "navigate",
+                "value": "hiphoprap"
+            },
+            "electronicedm": {
+                "name": "🎧 Electronic (EDM)",
+                "action": "navigate",
+                "value": "electronicedm"
+            },
+            "poprb": {
+                "name": "✨ Pop & R&B",
+                "action": "navigate",
+                "value": "poprb"
+            },
+            "jazzfunksoul": {
+                "name": "🎷 Jazz, Funk & Soul",
+                "action": "navigate",
+                "value": "jazzfunksoul"
+            }
         }
     },
-    "rock": {
+    "rockmetal": {
         "name": "🎸 Rock & Metal",
         "children": {
-            "r1": { "name": "60s/70s (Psych/Hard)", "query": "classic rock 70s psychedelic hard rock" },
-            "r2": { "name": "80s (Glam/New Wave)", "query": "80s glam metal new wave post punk" },
-            "r3": { "name": "90s (Grunge/Britpop)", "query": "90s grunge britpop skate punk" },
-            "r4": { "name": "00s (Nu-Metal/Indie)", "query": "2000s pop punk indie rock nu metal" },
-            "r5": { "name": "Modern (Shoegaze)", "query": "modern rock shoegaze post hardcore" }
+            "rock60s70s": {
+                "name": "Rock 60s/70s",
+                "query": "classic rock 70s psychedelic hard rock"
+            },
+            "rock80s": {
+                "name": "Rock 80s",
+                "query": "80s glam metal new wave post punk"
+            },
+            "rock90s": {
+                "name": "Rock 90s",
+                "query": "90s grunge britpop skate punk"
+            },
+            "rock00s": {
+                "name": "Rock 00s",
+                "query": "2000s pop punk indie rock nu metal"
+            },
+            "modernrock": {
+                "name": "Modern Rock",
+                "query": "modern rock shoegaze post hardcore"
+            }
         }
     },
-    "hiphop": {
+    "hiphoprap": {
         "name": "🎤 Hip-Hop & Rap",
         "children": {
-            "h1": { "name": "80s Old School", "query": "80s old school hip hop electro rap" },
-            "h2": { "name": "90s G-Funk/Boom Bap", "query": "90s boom bap g funk gangsta rap" },
-            "h3": { "name": "00s Crunk/South", "query": "2000s crunk dirty south hip hop" },
-            "h4": { "name": "10s SoundCloud", "query": "soundcloud rap mumble rap emo trap" },
-            "h5": { "name": "Modern Drill/Rage", "query": "modern drill rap rage dark trap" }
+            "rap80s": {
+                "name": "Rap 80s",
+                "query": "80s old school hip hop electro rap"
+            },
+            "rap90s": {
+                "name": "Rap 90s",
+                "query": "90s boom bap g funk gangsta rap"
+            },
+            "rap00s": {
+                "name": "Rap 00s",
+                "query": "2000s crunk dirty south hip hop"
+            },
+            "rap10s": {
+                "name": "Rap 10s",
+                "query": "soundcloud rap mumble rap emo trap"
+            },
+            "modernrap": {
+                "name": "Modern Rap",
+                "query": "modern drill rap rage dark trap"
+            }
         }
     },
-    "edm": {
-        "name": "🎧 Electronic",
+    "electronicedm": {
+        "name": "🎧 Electronic (EDM)",
         "children": {
-            "e1": { "name": "70s/80s Disco", "query": "70s disco 80s synth pop italo disco" },
-            "e2": { "name": "90s Eurodance/Trance", "query": "90s eurodance jungle idm trance" },
-            "e3": { "name": "00s House/Dubstep", "query": "electro house early dubstep minimal techno" },
-            "e4": { "name": "10s Trap/Future", "query": "future bass edm trap tropical house" },
-            "e5": { "name": "Modern Phonk/Hyperpop", "query": "drift phonk hardstyle hyperpop" }
+            "electronic70s80s": {
+                "name": "Electronic 70s/80s",
+                "query": "70s disco 80s synth pop italo disco"
+            },
+            "electronic90s": {
+                "name": "Electronic 90s",
+                "query": "90s eurodance jungle idm trance"
+            },
+            "electronic00s": {
+                "name": "Electronic 00s",
+                "query": "electro house early dubstep minimal techno"
+            },
+            "electronic10s": {
+                "name": "Electronic 10s",
+                "query": "future bass edm trap tropical house"
+            },
+            "modernelectronic": {
+                "name": "Modern Electronic",
+                "query": "drift phonk hardstyle hyperpop"
+            }
         }
     },
-    "pop": {
+    "poprb": {
         "name": "✨ Pop & R&B",
         "children": {
-            "p1": { "name": "80s Synth/Dance", "query": "80s synth rnb dance pop" },
-            "p2": { "name": "90s R&B/Boybands", "query": "90s contemporary rnb boy bands" },
-            "p3": { "name": "00s Teen Pop", "query": "2000s teen pop hip hop soul" },
-            "p4": { "name": "Modern / K-Pop", "query": "modern alt pop kpop bedroom pop" }
+            "poprb80s": {
+                "name": "Pop/R&B 80s",
+                "query": "80s synth rnb dance pop"
+            },
+            "poprb90s": {
+                "name": "Pop/R&B 90s",
+                "query": "90s contemporary rnb boy bands"
+            },
+            "poprb00s": {
+                "name": "Pop/R&B 00s",
+                "query": "2000s teen pop hip hop soul"
+            },
+            "modernpop": {
+                "name": "Modern Pop",
+                "query": "modern alt pop kpop bedroom pop"
+            }
         }
     },
-    "jazz": {
-        "name": "🎷 Jazz & Soul",
+    "jazzfunksoul": {
+        "name": "🎷 Jazz, Funk & Soul",
         "children": {
-            "j1": { "name": "Soul/Funk 60s/70s", "query": "motown sound deep funk 70s" },
-            "j2": { "name": "Jazz 40s/50s (Bebop)", "query": "bebop jazz cool jazz classics" },
-            "j3": { "name": "Modern Jazz", "query": "nu jazz acid jazz mix" }
+            "soulfunk60s70s": {
+                "name": "Soul/Funk 60s/70s",
+                "query": "motown sound deep funk 70s"
+            },
+            "jazz40s50s": {
+                "name": "Jazz 40s/50s",
+                "query": "bebop jazz cool jazz classics"
+            },
+            "modernjazz": {
+                "name": "Modern Jazz",
+                "query": "nu jazz acid jazz mix"
+            }
         }
     }
 }

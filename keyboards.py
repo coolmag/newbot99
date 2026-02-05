@@ -23,32 +23,40 @@ def get_subcategory_keyboard(path_str: str):
     """Подменю"""
     try:
         keys = path_str.split('|')
-        current = MUSIC_CATALOG["main_menu"]["children"]
         
-        # Идем вглубь по ключам
-        # Пример path: rock
-        for k in keys:
-            if k in current:
-                current = current[k]
-                if "children" in current:
-                    current = current["children"]
+        # Start traversal from the root of the catalog data
+        current = MUSIC_CATALOG
+        
+        # Follow the path of keys
+        for key in keys:
+            if key in current:
+                current = current[key]
+            elif "children" in current and key in current["children"]:
+                current = current["children"][key]
             else:
-                return None # Ошибка пути
+                raise KeyError(f"Invalid path key: {key}")
+
+        if "children" not in current:
+            raise ValueError("Path does not lead to a category with children.")
+            
+        keyboard_items = current["children"]
 
         keyboard = []
-        for key, val in current.items():
+        for key, val in keyboard_items.items():
             name = val.get("name", key)
             
-            # Если есть children -> это папка -> cat|rock|classic
             if "children" in val:
                  new_path = f"{path_str}|{key}"
                  keyboard.append([InlineKeyboardButton(f"📂 {name}", callback_data=f"cat|{new_path}")])
-            # Иначе -> это жанр -> play_cat|rock|r1
             else:
                  full_path = f"{path_str}|{key}"
                  keyboard.append([InlineKeyboardButton(f"▶️ {name}", callback_data=f"play_cat|{full_path}")])
 
-        keyboard.append([InlineKeyboardButton("🔙 Назад", callback_data="main_menu_genres")])
+        # Build the 'back' button path
+        parent_path = "|".join(keys[:-1])
+        back_callback = f"cat|{parent_path}" if parent_path else "main_menu_genres"
+        
+        keyboard.append([InlineKeyboardButton("🔙 Назад", callback_data=back_callback)])
         return InlineKeyboardMarkup(keyboard)
 
     except Exception as e:
