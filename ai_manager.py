@@ -1,12 +1,14 @@
 import logging
 import json
 import re
-from google import genai
+import google.generativeai as genai
 from typing import Optional, Dict
 
     
 
 from config import get_settings
+
+logger = logging.getLogger("ai_manager")
 AURORA_SYSTEM_PROMPT = """
 Ты — Аврора, ИИ-диджей в Телеграм-боте.
 Твой стиль: дерзкая, веселая, используешь эмодзи (🎧, 🛸, 🎸).
