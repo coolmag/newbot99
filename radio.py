@@ -6,15 +6,16 @@ import time
 from typing import List, Optional, Dict, Set
 from dataclasses import dataclass, field
 from telegram import Bot, Message, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.constants import ParseMode, ChatType
-from telegram.error import BadRequest, RetryAfter, Forbidden
-from config import Settings, RADIO_PRESETS
+from telegram.constants import ParseMode
+from telegram.error import BadRequest, Forbidden
+
+from config import Settings
 from models import TrackInfo, DownloadResult
 from youtube import YouTubeDownloader
 import json
 from pathlib import Path
 
-# Load MUSIC_CATALOG
+# Загружаем каталог
 with open(Path(__file__).parent / "genres.json", "r", encoding="utf-8") as f:
     MUSIC_CATALOG = json.load(f)
 
@@ -65,18 +66,145 @@ class RadioSession:
     async def skip(self):
         self.skip_event.set()
 
-    async def _handle_forbidden(self):
-        self.is_running = False
-        self.skip_event.set()
+    async def change_wave_random(self):
+        """Меняет волну на случайную из каталога."""
+        try:
+            # Собираем все доступные query из каталога
+            options = []
+            def extract(node):
+                if isinstance(node, dict):
+                    if "query" in node: options.append(node)
+                    elif "children" in node: 
+                        for k, v in node["children"].items(): extract(v)
+            
+            for k, v in MUSIC_CATALOG.items(): extract(v)
+            
+            if options:
+                new_wave = random.choice(options)
+                self.query = new_wave["query"]
+                self.display_name = new_wave.get("name", self.query)
+                self.playlist.clear()
+                self.played_ids.clear()
+                self.last_wave_change_time = time.time()
+                
+                await self.bot.send_message(
+                    self.chat_id, 
+                    f"🔄 *Смена пластинки!*\n📡 Новая волна: *{self.display_name}*", 
+                    parse_mode=ParseMode.MARKDOWN
+                )
+                logger.info(f"[{self.chat_id}] Auto-switch to: {self.display_name}")
+                await self._fill_playlist()
+        except Exception as e:
+            logger.error(f"Error changing wave: {e}")
 
+    async def _fill_playlist(self):
+        if self._is_searching or not self.is_running: return
+        self._is_searching = True
+        
+        # Вариации запроса
+        variations = [self.query, f"{self.query} best songs", f"{self.query} mix"]
+        random.shuffle(variations)
+        
+        found = False
+        for q in variations:
+            if not self.is_running: break
+            try:
+                tracks = await self.downloader.search(q, limit=20)
+                new_tracks = [t for t in tracks if t.identifier not in self.played_ids]
+                if new_tracks:
+                    random.shuffle(new_tracks)
+                    self.playlist.extend(new_tracks)
+                    found = True
+                    break
+            except Exception: pass
+        
+        # ЕСЛИ НИЧЕГО НЕ НАШЛИ - МЕНЯЕМ ВОЛНУ
+        if not found and not self.playlist:
+            logger.warning(f"[{self.chat_id}] Жанр '{self.query}' иссяк. Меняем волну.")
+            await self._update_status("⚠️ Сигнал потерян, ищем другую частоту...")
+            await asyncio.sleep(2)
+            self._is_searching = False # Сброс флага перед рекурсией
+            await self.change_wave_random()
+            return
+
+        if len(self.played_ids) > 100: self.played_ids.clear()
+        self._is_searching = False
+
+    async def _radio_loop(self):
+        while self.is_running:
+            try:
+                # 1. Проверка времени (Час прошел?)
+                if time.time() - self.last_wave_change_time > 3600:
+                    await self.change_wave_random()
+
+                # 2. Пополнение
+                if len(self.playlist) < 3: await self._fill_playlist()
+                
+                if not self.playlist:
+                    await self._update_status("📡 Поиск сигнала...")
+                    await asyncio.sleep(5)
+                    await self._fill_playlist()
+                    if not self.playlist:
+                        # Если совсем всё плохо - меняем волну принудительно
+                        await self.change_wave_random()
+                        continue
+
+                track = self.playlist.pop(0)
+                self.played_ids.add(track.identifier)
+                
+                # 3. Воспроизведение
+                success = await self._play_track(track)
+                
+                if success:
+                    wait_time = min(track.duration, 300) if track.duration > 0 else 180
+                    try: await asyncio.wait_for(self.skip_event.wait(), timeout=wait_time)
+                    except asyncio.TimeoutError: pass 
+                else:
+                    # Если ошибка - сразу идем дальше, не ждем
+                    await asyncio.sleep(0.5) 
+                
+                self.skip_event.clear()
+            except asyncio.CancelledError: break
+            except Exception as e: 
+                logger.error(f"Loop error: {e}")
+                await asyncio.sleep(5)
+        self.is_running = False
+
+    async def _play_track(self, track: TrackInfo) -> bool:
+        if not self.is_running: return False
+        try:
+            await self._update_status(f"⬇️ Загрузка: *{track.title}*...")
+            
+            result = await self.downloader.download(track.identifier, track_info=track)
+            
+            if not result or not result.success: return False
+            
+            caption = get_now_playing_message(track, self.display_name)
+            
+            if result.file_path:
+                try:
+                    with open(result.file_path, 'rb') as f:
+                        await self.bot.send_audio(self.chat_id, audio=f, caption=caption, parse_mode=ParseMode.MARKDOWN)
+                    
+                    await self._delete_status()
+                    
+                    # Удаляем файл сразу
+                    try: os.unlink(result.file_path)
+                    except: pass
+                    
+                    return True
+                except Exception: return False
+            return False
+        except Exception: return False
+    
     async def _update_status(self, text: str):
         if not self.is_running: return
         try:
-            if self.status_message:
-                try: await self.status_message.edit_text(text, parse_mode=ParseMode.MARKDOWN)
-                except BadRequest: self.status_message = None
             if not self.status_message:
                 self.status_message = await self.bot.send_message(self.chat_id, text, parse_mode=ParseMode.MARKDOWN)
+            else:
+                try: await self.status_message.edit_text(text, parse_mode=ParseMode.MARKDOWN)
+                except BadRequest: self.status_message = None
         except Exception: pass
 
     async def _delete_status(self):
@@ -84,102 +212,6 @@ class RadioSession:
             try: await self.status_message.delete()
             except: pass
             self.status_message = None
-
-    async def _fill_playlist(self):
-        if self._is_searching or not self.is_running: return
-        self._is_searching = True
-        
-        variations = [self.query, f"{self.query} mix", f"{self.query} best songs"]
-        random.shuffle(variations)
-        
-        for q in variations:
-            if not self.is_running: break
-            try:
-                tracks = await self.downloader.search(q, decade=self.decade, limit=20)
-                new_tracks = [t for t in tracks if t.identifier not in self.played_ids]
-                if new_tracks:
-                    random.shuffle(new_tracks)
-                    self.playlist.extend(new_tracks)
-                    break
-            except Exception: pass
-        
-        if len(self.played_ids) > 100: self.played_ids.clear()
-        self._is_searching = False
-
-    async def _radio_loop(self):
-        while self.is_running:
-            try:
-                if len(self.playlist) < 3: await self._fill_playlist()
-                
-                if not self.playlist:
-                    await self._update_status("📡 Поиск частоты...")
-                    await asyncio.sleep(5)
-                    await self._fill_playlist()
-                    if not self.playlist:
-                        await asyncio.sleep(10)
-                        continue
-
-                track = self.playlist.pop(0)
-                self.played_ids.add(track.identifier)
-                
-                # --- ПОПЫТКА ВОСПРОИЗВЕДЕНИЯ ---
-                success = await self._play_track(track)
-                
-                if success:
-                    # Если сыграло - ждем конца трека или пропуска
-                    wait_time = min(track.duration, 300) if track.duration > 0 else 180
-                    try: await asyncio.wait_for(self.skip_event.wait(), timeout=wait_time)
-                    except asyncio.TimeoutError: pass 
-                else:
-                    # !!! ВАЖНОЕ ИЗМЕНЕНИЕ !!!
-                    # Если не сыграло (нет на SC) - НЕ ЖДЕМ, СРАЗУ NEXT
-                    logger.info(f"[{self.chat_id}] Skip failed track: {track.title}")
-                    await asyncio.sleep(0.5) 
-                
-                self.skip_event.clear()
-            except asyncio.CancelledError: break
-            except Exception as e: logger.error(f"Loop: {e}"); await asyncio.sleep(5)
-        self.is_running = False
-
-    async def _play_track(self, track: TrackInfo) -> bool:
-        if not self.is_running: return False
-        try:
-            await self._update_status(f"⬇️ Ищем на SoundCloud: *{track.title}*...")
-            
-            result = await self.downloader.download(track.identifier, track_info=track)
-            
-            if not result or not result.success: 
-                # Не нашли на SC
-                return False
-            
-            caption = get_now_playing_message(track, self.display_name)
-            
-            # --- ВОЗВРАЩАЕМ КНОПКУ ПЛЕЕРА ---
-            markup = None
-            base_url = self.settings.BASE_URL.strip() if self.settings.BASE_URL else ""
-            if base_url.startswith("https") and self.chat_type != ChatType.CHANNEL:
-                markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔗 Плеер", url=base_url)]])
-            # ------------------------------------
-
-            # Логика отправки файла
-            sent = False
-            try:
-                if result.file_path:
-                    with open(result.file_path, 'rb') as f:
-                        await self.bot.send_audio(self.chat_id, audio=f, caption=caption, parse_mode=ParseMode.MARKDOWN, reply_markup=markup)
-                        sent = True
-            except Forbidden: await self._handle_forbidden(); return False
-            except Exception: return False
-            
-            await self._delete_status()
-            
-            # Удаляем файл
-            if result.file_path and result.file_path.exists():
-                try: os.unlink(result.file_path)
-                except: pass
-                
-            return sent
-        except Exception: return False
 
 class RadioManager:
     def __init__(self, bot: Bot, settings: Settings, downloader: YouTubeDownloader):
