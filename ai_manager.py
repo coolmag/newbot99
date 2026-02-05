@@ -1,7 +1,7 @@
 import logging
 import json
 import re
-import google.generativeai as genai
+from google import genai
 from typing import Optional, Dict
 
     
@@ -55,7 +55,7 @@ class AIManager:
             # Gemma требует настройки генерации
             response = await self.model.generate_content_async(
                 prompt,
-                generation_config=GenerationConfig(temperature=0.1)
+                generation_config=genai.GenerationConfig(temperature=0.1)
             )
             
             raw_text = response.text.strip()
