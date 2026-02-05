@@ -34,7 +34,7 @@ class AIManager:
                 # New SDK: Instantiate a client
                 self.client = genai.Client(api_key=api_key)
                 # Test the connection by getting the model info (optional but good practice)
-                self.client.models.get(self.model_name)
+                self.client.models.get(model=self.model_name)
                 self.is_active = True
                 logger.info(f"✅ Google GenAI client configured successfully for model {self.model_name}.")
             except Exception as e:

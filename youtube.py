@@ -53,7 +53,7 @@ class YouTubeDownloader:
                     else: duration = int(parts[0])
                 except: pass
                 
-                if duration > 900 or duration == 0: continue
+                if duration > 900 or duration < 40: continue
 
                 track = TrackInfo(
                     identifier=video_id, 
