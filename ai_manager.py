@@ -59,7 +59,7 @@ class AIManager:
             """
 
             # New SDK: Use client.models.generate_content and pass config as a dict
-            response = await self.client.models.generate_content(
+            response = await self.client.aio.models.generate_content(
                 model=self.model_name,
                 contents=prompt,
                 config={
