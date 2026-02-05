@@ -172,11 +172,17 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer("⛔️ Доступ запрещен.", show_alert=True)
             return
 
-        mode = data.split("|")[1]
-        context.chat_data["mode"] = mode
-        await query.answer(f"✅ Режим AI изменен на: {mode}")
+        new_mode = data.split("|")[1]
+        current_mode = context.chat_data.get("mode", "default")
+
+        if new_mode == current_mode:
+            await query.answer("Этот режим AI уже активен.")
+            return
+
+        context.chat_data["mode"] = new_mode
+        await query.answer(f"✅ Режим AI изменен на: {new_mode}")
         await query.edit_message_text(
-            f"⚙️ **Меню администратора**\n\nТекущий режим: *{mode}*",
+            f"⚙️ **Меню администратора**\n\nТекущий режим: *{new_mode}*",
             parse_mode=ParseMode.MARKDOWN,
             reply_markup=get_admin_keyboard()
         )
