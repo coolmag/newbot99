@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
 python-telegram-bot
-google-generativeai
+google-genai
 yt-dlp @ https://github.com/yt-dlp/yt-dlp/archive/master.tar.gz
 aiosqlite
 pydantic
@@ -10,5 +10,4 @@ httpx>=0.24.0
 ytmusicapi>=1.0.0
 psutil
 nest-asyncio
-spotipy
 ffmpeg-python

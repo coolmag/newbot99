@@ -12,7 +12,7 @@ from youtube import YouTubeDownloader
 from cache_service import CacheService
 from ai_manager import AIManager
 from radio import RadioManager
-from spotify import SpotifyService
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("main")
@@ -30,7 +30,6 @@ app.add_middleware(
 
 cache_service = CacheService(settings.CACHE_DB_PATH)
 downloader = YouTubeDownloader(settings, cache_service)
-spotify_service = SpotifyService(settings, downloader)
 ai_manager = AIManager()
 
 Path("static").mkdir(exist_ok=True)
@@ -44,7 +43,7 @@ async def startup_event():
     
     application = Application.builder().token(settings.BOT_TOKEN).build()
     radio_manager = RadioManager(application.bot, settings, downloader)
-    setup_handlers(application, radio_manager, settings, downloader, spotify_service=spotify_service)
+    setup_handlers(application, radio_manager, settings, downloader)
     
     await application.initialize()
     await application.start()

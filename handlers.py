@@ -183,10 +183,9 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             _do_search_background(chat_id, query, context)
         )
 
-def setup_handlers(app, radio, settings, downloader, spotify_service):
+def setup_handlers(app, radio, settings, downloader):
     app.downloader = downloader
     app.radio_manager = radio
-    app.spotify_service = spotify_service
     app.settings = settings
     
     app.add_handler(CommandHandler("start", start))

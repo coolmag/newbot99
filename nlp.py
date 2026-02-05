@@ -1,9 +1,5 @@
 import logging
 import google.generativeai as genai
-try:
-    from google.generativeai.types import GenerationConfig
-except ImportError:
-    GenerationConfig = genai.GenerationConfig
 
 from ai_manager import AIManager # Теперь это класс
 
@@ -53,7 +49,7 @@ async def analyze_message(text: str):
 
         response = await ai_manager.model.generate_content_async(
             prompt,
-            generation_config=genai.types.GenerationConfig(temperature=0.1)
+            generation_config=genai.GenerationConfig(temperature=0.1)
         )
         
         raw_text = response.text.strip()

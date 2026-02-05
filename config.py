@@ -22,8 +22,6 @@ class Settings(BaseSettings):
     # Ключи
     GOOGLE_API_KEY: str = Field(default="", validation_alias="GEMINI_API_KEY") # Алиас для Gemini
     OPENROUTER_API_KEY: str = ""
-    SPOTIFY_CLIENT_ID: Optional[str] = None
-    SPOTIFY_CLIENT_SECRET: Optional[str] = None
 
     # ВАЖНО: Алиас для ADMIN_IDS
     ADMIN_ID_LIST: Any = Field(default=[], validation_alias="ADMIN_IDS")
