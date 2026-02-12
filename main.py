@@ -37,38 +37,30 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
 async def startup_event():
+    """Starts the bot in polling mode for GitHub Actions deployment."""
     await cache_service.initialize()
-    from telegram.ext import Application, ExtBot
+    from telegram.ext import Application
     from handlers import setup_handlers
 
-    # --- HACK FOR HUGGING FACE ("Reanimator" Plan) ---
-    clean_proxy_url = settings.TELEGRAM_API_BASE.strip()
-    if not clean_proxy_url.startswith("http"):
-        clean_proxy_url = f"https://{clean_proxy_url}"
+    logger.info("Starting bot in polling mode for GitHub Actions deployment.")
 
-    logger.info(f"Reanimator Plan: Using proxy {clean_proxy_url} with a fake token.")
+    # Build the application with the real token. No proxy, no base_url.
+    application = Application.builder().token(settings.BOT_TOKEN).build()
 
-    # "Хак Века": Передаем фейковый токен без двоеточия, чтобы httpx не падал.
-    # Реальный токен зашит в Cloudflare Worker.
-    fake_token = "any-string-will-do-since-the-worker-ignores-it"
-
-    application = (
-        Application.builder()
-        .token(fake_token)
-        .base_url(clean_proxy_url)
-        .build()
-    )
+    # Setup other components
     radio_manager = RadioManager(application.bot, settings, downloader)
     setup_handlers(application, radio_manager, settings, downloader)
     
+    # Initialize the application
     await application.initialize()
-    await application.start()
     
-    try:
-        await application.bot.set_webhook(f"{settings.BASE_URL}/telegram")
-    except Exception as e:
-        logger.warning(f"Webhook setup failed: {e}")
+    # Start polling in a background task.
+    # This is non-blocking and will run alongside the Uvicorn web server.
+    await application.start_polling()
+    
+    logger.info("Bot has been initialized and polling has started.")
 
+    # Store application and radio_manager in app state if needed by web routes
     app.state.application = application
     app.state.radio_manager = radio_manager
 
