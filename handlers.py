@@ -235,8 +235,16 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             _do_search_background(chat_id, query_text, context)
         )
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Log Errors caused by Updates."""
+    logger.error("Exception while handling an update:", exc_info=context.error)
+
+
 def setup_handlers(app, radio, settings, downloader):
     """Registers all handlers with the application."""
+    # Register an error handler first
+    app.add_error_handler(error_handler)
+    
     app.downloader = downloader
     app.radio_manager = radio
     app.settings = settings
