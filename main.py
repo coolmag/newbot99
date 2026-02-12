@@ -45,7 +45,7 @@ async def startup_event():
     logger.info("Starting bot in polling mode for GitHub Actions deployment.")
 
     # Build the application with the real token. No proxy, no base_url.
-    application = Application.builder().token(settings.BOT_TOKEN).build()
+    application = Application.builder().token(settings.BOT_TOKEN).drop_pending_updates(True).build()
 
     # Setup other components
     radio_manager = RadioManager(application.bot, settings, downloader)
