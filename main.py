@@ -38,10 +38,26 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.on_event("startup")
 async def startup_event():
     await cache_service.initialize()
-    from telegram.ext import Application
+    from telegram.ext import Application, ExtBot
     from handlers import setup_handlers
-    
-    application = Application.builder().token(settings.BOT_TOKEN).build()
+
+    # --- HACK FOR HUGGING FACE ("Reanimator" Plan) ---
+    clean_proxy_url = settings.TELEGRAM_API_BASE.strip()
+    if not clean_proxy_url.startswith("http"):
+        clean_proxy_url = f"https://{clean_proxy_url}"
+
+    logger.info(f"Reanimator Plan: Using proxy {clean_proxy_url} with a fake token.")
+
+    # "Хак Века": Передаем фейковый токен без двоеточия, чтобы httpx не падал.
+    # Реальный токен зашит в Cloudflare Worker.
+    fake_token = "any-string-will-do-since-the-worker-ignores-it"
+
+    application = (
+        Application.builder()
+        .token(fake_token)
+        .base_url(clean_proxy_url)
+        .build()
+    )
     radio_manager = RadioManager(application.bot, settings, downloader)
     setup_handlers(application, radio_manager, settings, downloader)
     

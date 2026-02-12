@@ -1,6 +1,6 @@
 fastapi
 uvicorn[standard]
-python-telegram-bot
+python-telegram-bot>=21.0
 google-genai
 yt-dlp @ https://github.com/yt-dlp/yt-dlp/archive/master.tar.gz
 aiosqlite

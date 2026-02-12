@@ -1,14 +1,13 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
-# Node.js для yt-dlp (FFmpegExtractor)
+ENV PYTHONUNBUFFERED 1
+
+# Устанавливаем системные зависимости
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     ffmpeg \
-    nodejs \
-    npm \
+    dnsutils \
     && rm -rf /var/lib/apt/lists/*
-
-RUN ln -s /usr/bin/nodejs /usr/bin/node || true
 
 WORKDIR /app
 
@@ -18,4 +17,5 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY . .
 
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# Диагностика сети и запуск
+CMD ["sh", "-c", "echo '--- Starting Network Diagnostics ---' && nslookup api.telegram.org && echo '--- Diagnostics Finished, Starting App ---' && uvicorn main:app --host 0.0.0.0 --port 7860"]
