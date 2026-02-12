@@ -54,13 +54,12 @@ async def startup_event():
     # Initialize the application
     await application.initialize()
     
-    # Start polling as a background task.
-    # run_polling() is blocking, but loop.create_task() runs it in the background
-    # so it doesn't block the Uvicorn server startup.
-    loop = asyncio.get_event_loop()
-    loop.create_task(application.run_polling())
+    # Start the application in the background.
+    # This is the correct non-blocking way to run the bot alongside a web framework.
+    # It schedules the polling tasks on the existing asyncio event loop.
+    await application.start()
     
-    logger.info("Bot has been initialized and polling is running in the background.")
+    logger.info("Bot has been initialized and polling has started.")
 
     # Store application and radio_manager in app state if needed by web routes
     app.state.application = application
