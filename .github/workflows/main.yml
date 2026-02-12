@@ -1,41 +1,36 @@
 name: Run Telegram Bot
 
 on:
-  # Позволяет запускать воркфлоу вручную со страницы Actions в GitHub
   workflow_dispatch:
-
-  # Запускает воркфлоу по расписанию
   schedule:
-    # Каждые 6 часов. GitHub Actions автоматически перезапустит бота.
     - cron: "0 */6 * * *"
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    # Таймаут чуть меньше 6 часов, чтобы воркфлоу корректно завершился и перезапустился
-    timeout-minutes: 355 
+    timeout-minutes: 355 # Запуск почти на 6 часов
 
     steps:
-      - name: 1. Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 2. Set up Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip" # Кэширует зависимости для ускорения последующих запусков
+          cache: "pip"
 
-      - name: 3. Install dependencies
-        run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: 4. Run the bot
+      - name: Run the bot
         run: python main.py
         env:
-          # Передаем секреты из GitHub в окружение нашего бота
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          # Эти переменные могут понадобиться в будущем
-          # WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-          # BASE_URL: ${{ secrets.BASE_URL }}
+          # Если ты оставил обход DNS через Cloudflare, добавь и этот секрет:
+          TELEGRAM_API_BASE: ${{ secrets.TELEGRAM_API_BASE }}
