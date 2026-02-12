@@ -4,5 +4,10 @@ meta:
     name: docker
 build:
   dockerfile: Dockerfile
+  skip: false
 run:
-  containerPort: 7860
+  image: null
+  command: null
+  args: null
+  persistenceMount: /data
+  containerPort: "80"
