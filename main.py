@@ -11,6 +11,26 @@ from config import get_settings
 from youtube import YouTubeDownloader
 from cache_service import CacheService
 from ai_manager import ai_instance as ai_manager
+from radio import RadioManager
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("main")
+
+settings = get_settings()
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+cache_service = CacheService(settings.CACHE_DB_PATH)
+downloader = YouTubeDownloader(settings, cache_service)
+
 
 Path("static").mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
