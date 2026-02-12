@@ -26,7 +26,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run the bot
-        run: python main.py
+        run: uvicorn main:app --host 0.0.0.0 --port 8080
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
@@ -34,3 +34,4 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           # Если ты оставил обход DNS через Cloudflare, добавь и этот секрет:
           TELEGRAM_API_BASE: ${{ secrets.TELEGRAM_API_BASE }}
+
