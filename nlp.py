@@ -1,10 +1,7 @@
 import logging
-from ai_manager import AIManager
+from ai_manager import ai_instance as ai_manager
 
 logger = logging.getLogger("nlp")
-
-# Create a single, shared instance of the AI Manager
-ai_manager = AIManager()
 
 async def analyze_message(text: str, mode: str = "default"):
     """

@@ -10,27 +10,7 @@ from pydantic import BaseModel
 from config import get_settings
 from youtube import YouTubeDownloader
 from cache_service import CacheService
-from ai_manager import AIManager
-from radio import RadioManager
-
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("main")
-
-settings = get_settings()
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-cache_service = CacheService(settings.CACHE_DB_PATH)
-downloader = YouTubeDownloader(settings, cache_service)
-ai_manager = AIManager()
+from ai_manager import ai_instance as ai_manager
 
 Path("static").mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -42,28 +22,38 @@ async def startup_event():
     from telegram.ext import Application
     from handlers import setup_handlers
 
-    logger.info("Starting bot in polling mode for GitHub Actions deployment.")
+    logger.info("Starting bot in polling mode...")
 
-    # Build the application with the real token. No proxy, no base_url.
+    # Build application
     application = Application.builder().token(settings.BOT_TOKEN).build()
 
-    # Setup other components
+    # Setup components
     radio_manager = RadioManager(application.bot, settings, downloader)
     setup_handlers(application, radio_manager, settings, downloader)
     
-    # Initialize the application
+    # Initialize
     await application.initialize()
-    
-    # Start the application in the background.
-    # This is the correct non-blocking way to run the bot alongside a web framework.
-    # It schedules the polling tasks on the existing asyncio event loop.
     await application.start()
     
-    logger.info("Bot has been initialized and polling has started.")
+    # ✅ FIX: Explicitly start polling (non-blocking method)
+    if application.updater:
+        await application.updater.start_polling()
+    
+    logger.info("✅ Bot has been initialized and polling is ACTUALLY running.")
 
-    # Store application and radio_manager in app state if needed by web routes
     app.state.application = application
     app.state.radio_manager = radio_manager
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    if 'application' in app.state:
+        application = app.state.application
+        # Stop polling and app
+        if application.updater:
+            await application.updater.stop()
+        await application.stop()
+        await application.shutdown()
 
 class AIRequest(BaseModel):
     prompt: str
